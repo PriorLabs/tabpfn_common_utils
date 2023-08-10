@@ -47,6 +47,8 @@ def singleton(cls):
             instances[cls] = cls(*args, **kwargs)
         return instances[cls]
 
+    cls.delete_instance = lambda self: instances.pop(cls, None)
+
     return get_instance
 
 
