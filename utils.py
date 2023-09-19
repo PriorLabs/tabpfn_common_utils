@@ -37,6 +37,14 @@ def to_httpx_post_file_format(file_uploads: typing.List[FileUpload]) -> typing.D
     return ret
 
 
+def to_oauth_request_form(username: str, password: str) -> {}:
+    return {
+        "grant_type": "password",
+        "username": username,
+        "password": password
+    }
+
+
 # implement singleton by decorator
 def singleton(cls):
     instances = {}
@@ -64,4 +72,3 @@ def get_example_dataset(dataset_name: typing.Literal["iris", "breast_cancer", "d
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.33, random_state=42)
 
     return x_train, x_test, y_train, y_test
-
