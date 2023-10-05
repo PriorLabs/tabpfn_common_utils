@@ -31,8 +31,8 @@ FileUpload = typing.Tuple[FileName, FileContent]
 
 def to_httpx_post_file_format(file_uploads: typing.List[FileUpload]) -> typing.Dict:
     ret = {}
-    for name, content in file_uploads:
-        ret[name] = (name, content)
+    for file_category, filename, content in file_uploads:
+        ret[file_category] = (filename, content)
 
     return ret
 
