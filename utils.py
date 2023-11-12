@@ -26,9 +26,10 @@ def serialize_to_csv_formatted_bytes(
     return csv_bytes
 
 
+FileCategory = str
 FileName = str
 FileContent = bytes
-FileUpload = typing.Tuple[FileName, FileContent]
+FileUpload = typing.Tuple[FileCategory, FileName, FileContent]
 
 
 def to_httpx_post_file_format(file_uploads: typing.List[FileUpload]) -> typing.Dict:
