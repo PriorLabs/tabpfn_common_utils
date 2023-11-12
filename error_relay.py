@@ -1,7 +1,7 @@
 import json
 from functools import wraps
 
-from fastapi import HTTPException
+from starlette.exceptions import HTTPException
 
 
 class ErrorRelay:
