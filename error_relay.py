@@ -1,4 +1,5 @@
 import json
+from functools import wraps
 
 from fastapi import HTTPException
 
@@ -30,7 +31,7 @@ class ErrorRelay:
         """
         Try to decode error from HTTPException.
         """
-        if "ErrorRelay" not in http_exception.headers:
+        if http_exception.headers is None or "ErrorRelay" not in http_exception.headers:
             return None
 
         error = json.loads(http_exception.headers["ErrorRelay"])
@@ -41,3 +42,21 @@ class ErrorRelay:
         error_class = getattr(__import__("builtins"), error_type)
 
         return error_class(error_message)
+
+    @staticmethod
+    def intercept_http_exception(func: callable):
+        """
+        Intercept HTTPException and try decoding error from it.
+        """
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except HTTPException as http_exception:
+                error = ErrorRelay.try_decode_error_from_http_exception(http_exception)
+                if error is not None:
+                    raise error
+                else:
+                    raise http_exception
+        return wrapper
+
