@@ -72,3 +72,10 @@ def get_example_dataset(dataset_name: typing.Literal["iris", "breast_cancer", "d
     x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.33, random_state=42)
 
     return x_train, x_test, y_train, y_test
+
+
+def get_dataset_with_sepcific_size(num_examples: int=10_000, num_columns: int=100) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    x_train = np.random.RandomState(42).rand(num_examples, num_columns)
+    y_train = np.random.RandomState(42).randint(0, 2, size=num_examples)
+
+    return x_train, x_train, y_train, y_train
