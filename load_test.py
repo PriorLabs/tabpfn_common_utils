@@ -3,15 +3,23 @@ import os.path
 sys.path.append('../')
 from pathlib import Path
 import os, random, uuid, requests, argparse
-from app.main import ENDPOINTS 
-from env_config.env_config import EnvConfig
+from app.main import ENDPOINTS
+from enum import Enum 
 from utils import to_oauth_request_form
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 BASE_PATH = Path(__file__).parent.resolve()
 
+class RequestType(Enum):
+    DEFAULT = 0
+    REGISTER = 1
+    LOGIN = 2
+    PROTECTED_ROOT = 3
+    UPLOAD_TRAIN_SET = 4
+    PREDICT = 5
+
 # Fixed User Credentials
-user_credentials = {
+user_credentials_template = {
     "password": "Test1@123",
     "password_confirm": "Test1@123",
     "validation_link": "tabpfn"
@@ -47,19 +55,25 @@ def parse_args():
     )
     return parser.parse_args()
 
-def generate_email():
+def generate_user_email_address():
     """
     Generate a random email address for a user: 
+    This can generate around 16^32 unique email addresses as of now and 
+    can be increased by increasing the length of the UUID. So the probability
+    of generating the same email address for the second time is very low.
+    Approximately, there would be a possibility of 
+    1 - (16^32! / (16^32^100 * (16^32 - 100)!)) for atleast 1 collision for 
+    100 generated UUIDs which is significantly low due to increasing combinations
     """
     random_uuid = uuid.uuid4().hex.replace('%', '')
     domain_name = random.choice(['gmail.com', 'outlook.org', 'yahoo.in', 'hotmail.com'])
     random_email = "user" + f"{random_uuid}@{domain_name}"
     return random_email
 
-def api_request(url, data=None, headers=None, type=0, files=None):
+def api_request(url, data=None, headers=None, type=RequestType.DEFAULT, files=None):
     """
     Make an API request to the server:
-    type: [1, 2, 3]
+    type:
     1. Register API
     2. Login API
     3. Protected Root API
@@ -67,17 +81,18 @@ def api_request(url, data=None, headers=None, type=0, files=None):
     5. Upload Test Set API / Predict API
     """
     response = None
-    if type == 1:
+    if type == RequestType.REGISTER:
         response = requests.post(url, params=data)
-    elif type == 2:
+    elif type == RequestType.LOGIN:
         response = requests.post(url, data=data)
-    elif type == 3:
+    elif type == RequestType.PROTECTED_ROOT:
         response = requests.get(url, headers=headers)
-    elif type == 4:
+    elif type == RequestType.UPLOAD_TRAIN_SET:
         response = requests.post(url, headers=headers, files=files)
-    elif type == 5:
+    elif type == RequestType.PREDICT:
         response = requests.post(url, headers=headers, params=data, files=files)
-    
+    else:
+        raise NotImplementedError(f"Response type {type} is not implemented")
     return response.json()
 
 def process_user(user, SERVER_URL):
@@ -92,33 +107,33 @@ def process_user(user, SERVER_URL):
      Inputs: 
         user: User ID: 1, 2, 3, ...
     """
-    email = generate_email()
-    # Combine user data with user_credentials and unique email
+    email = generate_user_email_address()
+    # Combine user data with user_credentials_template and unique email
     user_data = {
         "email": email,
-        **user_credentials,
+        **user_credentials_template,
         user : user
     }
 
     # Register API: Registers a new user
     register_api =  SERVER_URL + ENDPOINTS.register.path
-    response_register = api_request(register_api, user_data, type=1)
+    response_register = api_request(register_api, user_data, type=RequestType.REGISTER)
     # print(response_register) 
 
     # Login API: Authenticates the user JUST REGISTERED
     request_data = to_oauth_request_form(
         email, 
-        user_credentials["password"]
+        user_credentials_template["password"]
     )
     login_api = SERVER_URL + ENDPOINTS.login.path
-    response_login = api_request(login_api, request_data, type=2)
+    response_login = api_request(login_api, request_data, type=RequestType.LOGIN)
     # print(response_login)
 
     # Protected Root API: Access the protected root
     user_access_token = response_login["access_token"]
     headers = {"Authorization": f"Bearer {user_access_token}"} 
     protected_api = SERVER_URL + ENDPOINTS.protected_root.path
-    response_protected = api_request(protected_api, headers=headers, type=3)
+    response_protected = api_request(protected_api, headers=headers, type=RequestType.PROTECTED_ROOT)
     # print(response_protected)
 
     # Upload Train Set API: Upload a train set
@@ -133,7 +148,7 @@ def process_user(user, SERVER_URL):
     upload_train_set_response = api_request(
         upload_train_set_api, 
         headers=headers, 
-        type=4, 
+        type=RequestType.UPLOAD_TRAIN_SET, 
         files=files
     )
 
@@ -152,7 +167,7 @@ def process_user(user, SERVER_URL):
     #     upload_test_set_api, 
     #     data=data, 
     #     headers=headers,  
-    #     type=5, 
+    #     type=RequestType.PREDICT, 
     #     files=files_test
     # )
     # print(upload_test_set_response)
@@ -165,7 +180,7 @@ def process_user(user, SERVER_URL):
     #     predict_proba_api, 
     #     data=data, 
     #     headers=headers,  
-    #     type=5, 
+    #     type=RequestType.PREDICT, 
     #     files=files_test
     # )
 
@@ -175,13 +190,17 @@ def process_user(user, SERVER_URL):
         predict_api, 
         data=data, 
         headers=headers,  
-        type=5, 
+        type=RequestType.PREDICT, 
         files=files_test
     )
     # print(predict_response)
     return predict_response    
 
 def main():
+    """
+    Usage: 
+    `python load_test.py --num_users=100 --num_requests=10 --server_url='http://0.0.0.0/'
+    """
     # Generate a list of parsed arguments
     args = parse_args()
     # Set the server URL
