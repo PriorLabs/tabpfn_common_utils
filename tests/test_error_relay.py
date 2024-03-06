@@ -7,7 +7,6 @@ from tabpfn_common_utils.error_relay import ErrorRelay
 
 
 class TestErrorRelay(unittest.TestCase):
-
     @staticmethod
     def _get_http_exception_response(encode_error: Exception = None) -> Response:
         if encode_error is not None:
@@ -25,7 +24,10 @@ class TestErrorRelay(unittest.TestCase):
         error = ValueError("test error")
         http_exception = ErrorRelay.encode_error_in_http_exception(error)
         self.assertEqual(http_exception.status_code, 400)
-        self.assertEqual(http_exception.headers["ErrorRelay"], '{"type": "ValueError", "message": "test error"}')
+        self.assertEqual(
+            http_exception.headers["ErrorRelay"],
+            '{"type": "ValueError", "message": "test error"}',
+        )
 
     def test_try_decode_error_from_http_exception(self):
         error = ValueError("test error")

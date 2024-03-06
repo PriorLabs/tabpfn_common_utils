@@ -20,10 +20,11 @@ class ErrorRelay:
         """
         return HTTPException(
             status_code=400,
-            headers={"ErrorRelay": json.dumps({
-                "type": error.__class__.__name__,
-                "message": str(error)
-            })}
+            headers={
+                "ErrorRelay": json.dumps(
+                    {"type": error.__class__.__name__, "message": str(error)}
+                )
+            },
         )
 
     @staticmethod
