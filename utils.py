@@ -8,8 +8,10 @@ from sklearn.datasets import load_breast_cancer, load_digits, load_iris
 from sklearn.model_selection import train_test_split
 
 
-def serialize_to_csv_formatted_bytes(data: typing.Union[pd.DataFrame, np.ndarray, torch.Tensor]) -> bytes:
-    if type(data) not in [pd.DataFrame, np.ndarray, torch.Tensor]:
+def serialize_to_csv_formatted_bytes(
+    data: typing.Union[pd.DataFrame, pd.Series, np.ndarray, torch.Tensor],
+) -> bytes:
+    if type(data) not in [pd.DataFrame, pd.Series, np.ndarray, torch.Tensor]:
         raise TypeError(f"({type(data)}) is not supported for serialization")
 
     if isinstance(data, torch.Tensor):
@@ -19,7 +21,7 @@ def serialize_to_csv_formatted_bytes(data: typing.Union[pd.DataFrame, np.ndarray
         data = pd.DataFrame(data)
 
     # data is now of type pd.DataFrame
-    csv_bytes = data.to_csv(index=False).encode('utf-8')
+    csv_bytes = data.to_csv(index=False).encode("utf-8")
 
     return csv_bytes
 
@@ -38,11 +40,7 @@ def to_httpx_post_file_format(file_uploads: typing.List[FileUpload]) -> typing.D
 
 
 def to_oauth_request_form(username: str, password: str) -> {}:
-    return {
-        "grant_type": "password",
-        "username": username,
-        "password": password
-    }
+    return {"grant_type": "password", "username": username, "password": password}
 
 
 # implement singleton by decorator
@@ -60,21 +58,25 @@ def singleton(cls):
     return get_instance
 
 
-def get_example_dataset(dataset_name: typing.Literal["iris", "breast_cancer", "digits"]) \
-        -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-
+def get_example_dataset(
+    dataset_name: typing.Literal["iris", "breast_cancer", "digits"],
+) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     load_dataset_fn = {
         "iris": load_iris,
         "breast_cancer": load_breast_cancer,
         "digits": load_digits,
     }
-    x_train, y_train = load_dataset_fn[dataset_name](return_X_y=True)
-    x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.33, random_state=42)
+    x_train, y_train = load_dataset_fn[dataset_name](return_X_y=True, as_frame=True)
+    x_train, x_test, y_train, y_test = train_test_split(
+        x_train, y_train, test_size=0.33, random_state=42
+    )
 
     return x_train, x_test, y_train, y_test
 
 
-def get_dataset_with_sepcific_size(num_examples: int=10_000, num_columns: int=100) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def get_dataset_with_specific_size(
+    num_examples: int = 10_000, num_columns: int = 100
+) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     x_train = np.random.RandomState(42).rand(num_examples, num_columns)
     y_train = np.random.RandomState(42).randint(0, 2, size=num_examples)
 
