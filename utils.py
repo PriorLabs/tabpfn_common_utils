@@ -81,3 +81,13 @@ def get_dataset_with_specific_size(
     y_train = np.random.RandomState(42).randint(0, 2, size=num_examples)
 
     return x_train, x_train, y_train, y_train
+
+
+def assert_y_pred_proba_is_valid(x_test, y_pred_proba):
+    if isinstance(y_pred_proba, list):
+        y_pred_proba = np.array(y_pred_proba)
+
+    proba_shape = y_pred_proba.shape
+    assert proba_shape[0] == len(x_test)
+    assert proba_shape[1] >= 2
+    assert np.allclose(y_pred_proba.sum(axis=1), np.ones(proba_shape[0]))
