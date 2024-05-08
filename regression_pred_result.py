@@ -60,13 +60,12 @@ class RegressionPredictResult:
             "mean": serialize_fn(res.mean),
             "median": serialize_fn(res.median),
             "mode": serialize_fn(res.mode),
-            **{k: serialize_fn(v) for k, v in res.quantiles.items()}
+            **{k: serialize_fn(v) for k, v in res.quantiles.items()},
         }
 
     @staticmethod
     def deserialize(
-            serialized: {str: list},
-            output_val_type: [np.ndarray, torch.Tensor]
+        serialized: {str: list}, output_val_type: [np.ndarray, torch.Tensor]
     ) -> {str, np.ndarray | torch.Tensor}:
         if output_val_type == torch.Tensor:
             deserialize_fn = torch.tensor
@@ -79,6 +78,7 @@ class RegressionPredictResult:
             "mode": deserialize_fn(serialized["mode"]),
             **{
                 k: deserialize_fn(v)
-                for k, v in serialized.items() if k.startswith("quantile_")
-            }
+                for k, v in serialized.items()
+                if k.startswith("quantile_")
+            },
         }

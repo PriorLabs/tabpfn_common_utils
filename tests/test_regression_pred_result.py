@@ -14,9 +14,7 @@ class TestRegressionPredResult(unittest.TestCase):
             "quantile_0.75": np.array([5, 6, 7]),
         }
 
-        self.pred_res_serialized_ref = {
-            k: v.tolist() for k, v in self.pred_res.items()
-        }
+        self.pred_res_serialized_ref = {k: v.tolist() for k, v in self.pred_res.items()}
 
     def test_serialize_from_numpy(self):
         res = RegressionPredictResult(self.pred_res)
