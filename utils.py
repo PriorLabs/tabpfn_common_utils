@@ -67,6 +67,8 @@ def get_example_dataset(
         "digits": load_digits,
     }
     x_train, y_train = load_dataset_fn[dataset_name](return_X_y=True, as_frame=True)
+    x_train = x_train[:100]
+    y_train = y_train[:100]
     x_train, x_test, y_train, y_test = train_test_split(
         x_train, y_train, test_size=0.33, random_state=42
     )
