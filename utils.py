@@ -4,7 +4,7 @@ from functools import wraps
 import pandas as pd
 import numpy as np
 import torch
-from sklearn.datasets import load_breast_cancer, load_digits, load_iris
+from sklearn.datasets import load_breast_cancer, load_digits, load_iris, load_diabetes
 from sklearn.model_selection import train_test_split
 
 
@@ -59,12 +59,13 @@ def singleton(cls):
 
 
 def get_example_dataset(
-    dataset_name: typing.Literal["iris", "breast_cancer", "digits"],
+    dataset_name: typing.Literal["iris", "breast_cancer", "digits", "diabetes"],
 ) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     load_dataset_fn = {
         "iris": load_iris,
         "breast_cancer": load_breast_cancer,
         "digits": load_digits,
+        "diabetes": load_diabetes,
     }
     x_train, y_train = load_dataset_fn[dataset_name](return_X_y=True, as_frame=True)
     x_train, x_test, y_train, y_test = train_test_split(
