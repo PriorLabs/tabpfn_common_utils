@@ -18,11 +18,11 @@ class TestRegressionPredResult(unittest.TestCase):
 
     def test_serialize_from_numpy(self):
         res = RegressionPredictResult(self.pred_res)
-        serialized = RegressionPredictResult.serialize(res)
+        serialized = RegressionPredictResult.to_basic_representation(res)
         self.assertEqual(serialized, self.pred_res_serialized_ref)
 
     def test_deserialize_to_numpy(self):
-        res = RegressionPredictResult.deserialize(
+        res = RegressionPredictResult.from_basic_representation(
             self.pred_res_serialized_ref, np.ndarray
         )
 

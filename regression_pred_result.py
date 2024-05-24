@@ -6,25 +6,6 @@ import torch
 
 class RegressionPredictResult:
     def __init__(self, res: {}):
-        # res:
-        # {
-        #   criterion <class 'tabpfn.model.bar_distribution.FullSupportBarDistribution'>
-        #   mean <class 'numpy.ndarray'>
-        #   median <class 'numpy.ndarray'>
-        #   mode <class 'numpy.ndarray'>
-        #   logits <class 'numpy.ndarray'>
-        #   buckets <class 'numpy.ndarray'>
-        #   quantile_0.10 <class 'numpy.ndarray'>
-        #   quantile_0.20 <class 'numpy.ndarray'>
-        #   quantile_0.30 <class 'numpy.ndarray'>
-        #   quantile_0.40 <class 'numpy.ndarray'>
-        #   quantile_0.50 <class 'numpy.ndarray'>
-        #   quantile_0.60 <class 'numpy.ndarray'>
-        #   quantile_0.70 <class 'numpy.ndarray'>
-        #   quantile_0.80 <class 'numpy.ndarray'>
-        #   quantile_0.90 <class 'numpy.ndarray'>
-        # }
-
         self.mean = res["mean"]
         self.median = res["median"]
         self.mode = res["mode"]
@@ -49,7 +30,7 @@ class RegressionPredictResult:
         return self._val_type
 
     @staticmethod
-    def serialize(res: "RegressionPredictResult") -> dict[str, list]:
+    def to_basic_representation(res: "RegressionPredictResult") -> dict[str, list]:
         if res.val_type == list:
             return res
 
@@ -66,8 +47,8 @@ class RegressionPredictResult:
         }
 
     @staticmethod
-    def deserialize(
-        serialized: dict[str, list],
+    def from_basic_representation(
+        basic_repr: dict[str, list],
         output_val_type: Union[np.ndarray, torch.Tensor]
     ) -> dict[str, Union[np.ndarray, torch.Tensor]]:
 
@@ -77,12 +58,12 @@ class RegressionPredictResult:
             deserialize_fn = np.array
 
         return {
-            "mean": deserialize_fn(serialized["mean"]),
-            "median": deserialize_fn(serialized["median"]),
-            "mode": deserialize_fn(serialized["mode"]),
+            "mean": deserialize_fn(basic_repr["mean"]),
+            "median": deserialize_fn(basic_repr["median"]),
+            "mode": deserialize_fn(basic_repr["mode"]),
             **{
                 k: deserialize_fn(v)
-                for k, v in serialized.items()
+                for k, v in basic_repr.items()
                 if k.startswith("quantile_")
             },
         }
