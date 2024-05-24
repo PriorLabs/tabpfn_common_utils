@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import torch
 
@@ -47,7 +49,7 @@ class RegressionPredictResult:
         return self._val_type
 
     @staticmethod
-    def serialize(res: "RegressionPredictResult") -> {str: list}:
+    def serialize(res: "RegressionPredictResult") -> dict[str, list]:
         if res.val_type == list:
             return res
 
@@ -65,8 +67,10 @@ class RegressionPredictResult:
 
     @staticmethod
     def deserialize(
-        serialized: {str: list}, output_val_type: [np.ndarray, torch.Tensor]
-    ) -> {str, np.ndarray | torch.Tensor}:
+        serialized: dict[str, list],
+        output_val_type: Union[np.ndarray, torch.Tensor]
+    ) -> dict[str, Union[np.ndarray, torch.Tensor]]:
+
         if output_val_type == torch.Tensor:
             deserialize_fn = torch.tensor
         else:
