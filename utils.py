@@ -64,13 +64,13 @@ def get_example_dataset(
         "diabetes": load_diabetes,
     }
     x_train, y_train = load_dataset_fn[dataset_name](return_X_y=True, as_frame=True)
-    
+
     # shuffle and get 10 examples
     # shuffle is needed because we will might get examples with only 1 class
     indices = np.random.permutation(len(x_train))[:10]
     x_train = x_train.iloc[indices]
     y_train = y_train.iloc[indices]
-    
+
     x_train, x_test, y_train, y_test = train_test_split(
         x_train, y_train, test_size=0.33, random_state=42
     )
