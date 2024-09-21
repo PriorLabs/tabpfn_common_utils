@@ -3,7 +3,11 @@ import os.path
 
 sys.path.append("../")
 from pathlib import Path
-import os, random, uuid, requests, argparse
+import os
+import random
+import uuid
+import requests
+import argparse
 from app.main import ENDPOINTS
 from enum import Enum
 from utils import to_oauth_request_form
