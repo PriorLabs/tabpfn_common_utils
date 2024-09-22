@@ -3,7 +3,11 @@ import os.path
 
 sys.path.append("../")
 from pathlib import Path
-import os, random, uuid, requests, argparse
+import os
+import random
+import uuid
+import requests
+import argparse
 from app.main import ENDPOINTS
 from enum import Enum
 from utils import to_oauth_request_form
@@ -112,7 +116,7 @@ def process_user(user, SERVER_URL):
 
     # Register API: Registers a new user
     register_api = SERVER_URL + ENDPOINTS.register.path
-    response_register = api_request(register_api, user_data, type=RequestType.REGISTER)
+    _ = api_request(register_api, user_data, type=RequestType.REGISTER)
     # print(response_register)
 
     # Login API: Authenticates the user JUST REGISTERED
@@ -125,7 +129,7 @@ def process_user(user, SERVER_URL):
     user_access_token = response_login["access_token"]
     headers = {"Authorization": f"Bearer {user_access_token}"}
     protected_api = SERVER_URL + ENDPOINTS.protected_root.path
-    response_protected = api_request(
+    _ = api_request(
         protected_api, headers=headers, type=RequestType.PROTECTED_ROOT
     )
     # print(response_protected)

@@ -1,7 +1,4 @@
-from typing import Union
-
 import numpy as np
-import torch
 
 
 class RegressionPredictResult:
@@ -11,10 +8,8 @@ class RegressionPredictResult:
         self.mode = res["mode"]
         self.quantiles = {k: v for k, v in res.items() if k.startswith("quantile_")}
 
-        # assume values are either all numpy arrays or all torch tensors
-        if isinstance(self.mean, torch.Tensor):
-            self._val_type = torch.Tensor
-        elif isinstance(self.mean, np.ndarray):
+        # assume values are either all numpy arrays or lists
+        if isinstance(self.mean, np.ndarray):
             self._val_type = np.ndarray
         elif isinstance(self.mean, list):
             self._val_type = list
@@ -34,10 +29,7 @@ class RegressionPredictResult:
         if res.val_type == list:
             return res
 
-        if res.val_type == torch.Tensor:
-            serialize_fn = torch.Tensor.tolist
-        else:
-            serialize_fn = np.ndarray.tolist
+        serialize_fn = np.ndarray.tolist
 
         return {
             "mean": serialize_fn(res.mean),
@@ -47,15 +39,8 @@ class RegressionPredictResult:
         }
 
     @staticmethod
-    def from_basic_representation(
-        basic_repr: dict[str, list],
-        output_val_type: Union[np.ndarray, torch.Tensor]
-    ) -> dict[str, Union[np.ndarray, torch.Tensor]]:
-
-        if output_val_type == torch.Tensor:
-            deserialize_fn = torch.tensor
-        else:
-            deserialize_fn = np.array
+    def from_basic_representation(basic_repr: dict[str, list]) -> dict[str, np.ndarray]:
+        deserialize_fn = np.array
 
         return {
             "mean": deserialize_fn(basic_repr["mean"]),
