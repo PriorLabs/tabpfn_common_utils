@@ -39,20 +39,9 @@ def to_oauth_request_form(username: str, password: str) -> {}:
     return {"grant_type": "password", "username": username, "password": password}
 
 
-# implement singleton by decorator
-def singleton(cls):
-    instances = {}
-
-    @wraps(cls)
-    def get_instance(*args, **kwargs):
-        if cls not in instances:
-            instances[cls] = cls(*args, **kwargs)
-        return instances[cls]
-
-    cls.delete_instance = lambda self: instances.pop(cls, None)
-
-    return get_instance
-
+class Singleton:
+    def __new__(cls):
+        raise TypeError("Cannot instantiate this class. This is a singleton.")
 
 def get_example_dataset(
     dataset_name: typing.Literal["iris", "breast_cancer", "digits", "diabetes"],
