@@ -67,7 +67,9 @@ def get_example_dataset(
 
     # shuffle and get 10 examples
     # shuffle is needed because we will might get examples with only 1 class
-    indices = np.random.permutation(len(x_train))[:10]
+    # use fixed seed for reproducibility
+    rng = np.random.RandomState(46)
+    indices = rng.permutation(len(x_train))[:10]
     x_train = x_train.iloc[indices]
     y_train = y_train.iloc[indices]
 

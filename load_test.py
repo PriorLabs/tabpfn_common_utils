@@ -21,7 +21,7 @@ class RequestType(Enum):
     REGISTER = 1
     LOGIN = 2
     PROTECTED_ROOT = 3
-    UPLOAD_TRAIN_SET = 4
+    FIT = 4
     PREDICT = 5
 
 
@@ -79,7 +79,7 @@ def api_request(url, data=None, headers=None, type=RequestType.DEFAULT, files=No
     1. Register API
     2. Login API
     3. Protected Root API
-    4. Upload Train Set API
+    4. Fit API
     5. Upload Test Set API / Predict API
     """
     response = None
@@ -89,7 +89,7 @@ def api_request(url, data=None, headers=None, type=RequestType.DEFAULT, files=No
         response = requests.post(url, data=data)
     elif type == RequestType.PROTECTED_ROOT:
         response = requests.get(url, headers=headers)
-    elif type == RequestType.UPLOAD_TRAIN_SET:
+    elif type == RequestType.FIT:
         response = requests.post(url, headers=headers, files=files)
     elif type == RequestType.PREDICT:
         response = requests.post(url, headers=headers, params=data, files=files)
@@ -104,7 +104,7 @@ def process_user(user, SERVER_URL):
        1. Register the user
        2. Login the user
        3. Access the protected root
-       4. Upload a train set
+       4. Fit the model with train set
        5. Upload a test set
        6. Predict on the test set
     Inputs:
@@ -134,8 +134,8 @@ def process_user(user, SERVER_URL):
     )
     # print(response_protected)
 
-    # Upload Train Set API: Upload a train set
-    upload_train_set_api = SERVER_URL + ENDPOINTS.upload_train_set.path
+    # Fit API: Train the model with train set
+    fit_api = SERVER_URL + ENDPOINTS.fit.path
     ## Get the path of the train set
     x_train_path = os.path.join(BASE_PATH, "datasets", "X_train.csv")
     y_train_path = os.path.join(BASE_PATH, "datasets", "y_train.csv")
@@ -143,10 +143,10 @@ def process_user(user, SERVER_URL):
         "x_file": ("X_train.csv", open(x_train_path, "rb"), "application/csv"),
         "y_file": ("y_train.csv", open(y_train_path, "rb"), "application/csv"),
     }
-    upload_train_set_response = api_request(
-        upload_train_set_api,
+    fit_response = api_request(
+        fit_api,
         headers=headers,
-        type=RequestType.UPLOAD_TRAIN_SET,
+        type=RequestType.FIT,
         files=files,
     )
 
@@ -154,7 +154,7 @@ def process_user(user, SERVER_URL):
     ## Get the path of the train set
     x_test_path = os.path.join(BASE_PATH, "datasets", "X_test.csv")
     files_test = {"x_file": ("X_test.csv", open(x_test_path, "rb"), "application/csv")}
-    data = {"train_set_uid": upload_train_set_response["train_set_uid"]}
+    data = {"train_set_uid": fit_response["train_set_uid"]}
     # THIS IS FOR INTERNAL USE ONLY
     # upload_test_set_api = SERVER_URL + ENDPOINTS.upload_test_set.path
     # upload_test_set_response = api_request(
