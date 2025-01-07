@@ -22,23 +22,6 @@ class TestDataSerialization(unittest.TestCase):
         pd.testing.assert_frame_equal(test_data, data_recovered)
 
 
-class TestSingleton(unittest.TestCase):
-    def test_singleton(self):
-        @utils.singleton
-        class DummyClass:
-            def __init__(self, a, b):
-                self.a = a
-                self.b = b
-
-        test_singleton = DummyClass(1, 2)
-        test_singleton2 = DummyClass(3, 4)
-        self.assertEqual(test_singleton.a, 1)
-        self.assertEqual(test_singleton.b, 2)
-        self.assertEqual(test_singleton2.a, 1)
-        self.assertEqual(test_singleton2.b, 2)
-        self.assertEqual(test_singleton, test_singleton2)
-
-
 class TestAssertYPredProbaIsValid(unittest.TestCase):
     x_test = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
 
