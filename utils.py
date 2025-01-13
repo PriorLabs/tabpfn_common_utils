@@ -4,6 +4,9 @@ import pandas as pd
 import numpy as np
 from sklearn.datasets import load_breast_cancer, load_digits, load_iris, load_diabetes
 from sklearn.model_selection import train_test_split
+from typing import Literal, Union, Optional, List, Dict, Any, Tuple, Callable
+from dataclasses import dataclass
+from typing_extensions import override
 
 
 def serialize_to_csv_formatted_bytes(
@@ -85,3 +88,109 @@ def assert_y_pred_proba_is_valid(x_test, y_pred_proba):
     assert proba_shape[0] == len(x_test)
     assert proba_shape[1] >= 2
     assert np.allclose(y_pred_proba.sum(axis=1), np.ones(proba_shape[0]))
+
+
+@dataclass
+class PreprocessorConfig:
+    """Configuration for data preprocessors.
+
+    Attributes:
+        name: Name of the preprocessor.
+        categorical_name:
+            Name of the categorical encoding method.
+            Options: "none", "numeric", "onehot", "ordinal", "ordinal_shuffled", "none".
+        append_original: Whether to append original features to the transformed features
+        subsample_features: Fraction of features to subsample. -1 means no subsampling.
+        global_transformer_name: Name of the global transformer to use.
+    """
+
+    name: Literal[
+        "per_feature",  # a different transformation for each feature
+        "power",  # a standard sklearn power transformer
+        "safepower",  # a power transformer that prevents some numerical issues
+        "power_box",
+        "safepower_box",
+        "quantile_uni_coarse",  # quantile transformations with few quantiles up to many
+        "quantile_norm_coarse",
+        "quantile_uni",
+        "quantile_norm",
+        "quantile_uni_fine",
+        "quantile_norm_fine",
+        "robust",  # a standard sklearn robust scaler
+        "kdi",
+        "none",  # no transformation (only standardization in transformer)
+        "kdi_random_alpha",
+        "kdi_uni",
+        "kdi_random_alpha_uni",
+        "adaptive",
+        "norm_and_kdi",
+        # KDI with alpha collection
+        "kdi_alpha_0.3_uni",
+        "kdi_alpha_0.5_uni",
+        "kdi_alpha_0.8_uni",
+        "kdi_alpha_1.0_uni",
+        "kdi_alpha_1.2_uni",
+        "kdi_alpha_1.5_uni",
+        "kdi_alpha_2.0_uni",
+        "kdi_alpha_3.0_uni",
+        "kdi_alpha_5.0_uni",
+        "kdi_alpha_0.3",
+        "kdi_alpha_0.5",
+        "kdi_alpha_0.8",
+        "kdi_alpha_1.0",
+        "kdi_alpha_1.2",
+        "kdi_alpha_1.5",
+        "kdi_alpha_2.0",
+        "kdi_alpha_3.0",
+        "kdi_alpha_5.0",
+    ]
+    categorical_name: Literal[
+        # categorical features are pretty much treated as ordinal, just not resorted
+        "none",
+        # categorical features are treated as numeric,
+        # that means they are also power transformed for example
+        "numeric",
+        # "onehot": categorical features are onehot encoded
+        "onehot",
+        # "ordinal": categorical features are sorted and encoded as
+        # integers from 0 to n_categories - 1
+        "ordinal",
+        # "ordinal_shuffled": categorical features are encoded as integers
+        # from 0 to n_categories - 1 in a random order
+        "ordinal_shuffled",
+        "ordinal_very_common_categories_shuffled",
+    ] = "none"
+    append_original: bool = False
+    subsample_features: float = -1
+    global_transformer_name: Union[str, None] = None
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"{self.name}_cat:{self.categorical_name}"
+            + ("_and_none" if self.append_original else "")
+            + (
+                f"_subsample_feats_{self.subsample_features}"
+                if self.subsample_features > 0
+                else ""
+            )
+            + (
+                f"_global_transformer_{self.global_transformer_name}"
+                if self.global_transformer_name is not None
+                else ""
+            )
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the PreprocessorConfig instance to a dictionary.
+
+        Returns:
+            Dict[str, Any]: Dictionary containing the configuration parameters.
+        """
+        return {
+            "name": self.name,
+            "categorical_name": self.categorical_name,
+            "append_original": self.append_original,
+            "subsample_features": self.subsample_features,
+            "global_transformer_name": self.global_transformer_name,
+        }
