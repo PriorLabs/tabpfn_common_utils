@@ -23,7 +23,7 @@ class TestRegressionPredResult(unittest.TestCase):
 
     def test_deserialize_to_numpy(self):
         res = RegressionPredictResult.from_basic_representation(
-            self.pred_res_serialized_ref, np.ndarray
+            self.pred_res_serialized_ref
         )
 
         for key in res:
