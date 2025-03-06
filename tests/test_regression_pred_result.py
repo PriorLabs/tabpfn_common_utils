@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from tabpfn_common_utils.regression_pred_result import RegressionPredictResult
+from regression_pred_result import RegressionPredictResult
 
 
 class TestRegressionPredResult(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestRegressionPredResult(unittest.TestCase):
 
     def test_deserialize_to_numpy(self):
         res = RegressionPredictResult.from_basic_representation(
-            self.pred_res_serialized_ref, np.ndarray
+            self.pred_res_serialized_ref
         )
 
         for key in res:
