@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.datasets import load_breast_cancer, load_digits, load_iris, load_diabetes
 from sklearn.model_selection import train_test_split
-from typing import Literal, Union, Optional, List, Dict, Any, Tuple, Callable
+from typing import Literal, Union, Dict, Any
 from dataclasses import dataclass
 from typing_extensions import override
 
@@ -44,6 +44,7 @@ def to_oauth_request_form(username: str, password: str) -> {}:
 class Singleton:
     def __new__(cls):
         raise TypeError("Cannot instantiate this class. This is a singleton.")
+
 
 def get_example_dataset(
     dataset_name: typing.Literal["iris", "breast_cancer", "digits", "diabetes"],

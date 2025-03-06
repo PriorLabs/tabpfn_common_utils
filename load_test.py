@@ -129,9 +129,7 @@ def process_user(user, SERVER_URL):
     user_access_token = response_login["access_token"]
     headers = {"Authorization": f"Bearer {user_access_token}"}
     protected_api = SERVER_URL + ENDPOINTS.protected_root.path
-    _ = api_request(
-        protected_api, headers=headers, type=RequestType.PROTECTED_ROOT
-    )
+    _ = api_request(protected_api, headers=headers, type=RequestType.PROTECTED_ROOT)
     # print(response_protected)
 
     # Fit API: Train the model with train set
