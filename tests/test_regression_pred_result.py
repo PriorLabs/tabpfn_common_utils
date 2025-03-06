@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from tabpfn_common_utils.regression_pred_result import RegressionPredictResult
+from regression_pred_result import RegressionPredictResult
 
 
 class TestRegressionPredResult(unittest.TestCase):
