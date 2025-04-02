@@ -20,9 +20,10 @@ class AnalyticsHttpClient(httpx.Client):
         for header_name, get_value_func in ANALYTICS_TO_TRACK:
             if header_name == "X-Module-Name":
                 headers[header_name] = self.module_name
-            elif get_value_func is None:
+            elif get_value_func is not None:
                 headers[header_name] = get_value_func()
 
+        print(f"headers: {headers}")
         kwargs["headers"] = headers
 
         # Call the original request method
