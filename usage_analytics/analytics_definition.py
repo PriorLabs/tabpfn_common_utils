@@ -1,4 +1,4 @@
-from tabpfn_common_utils.usage_analytics.analytics_func import (
+from .analytics_func import (
     get_calling_class,
     get_python_version,
     get_unique_call_id,
@@ -7,6 +7,7 @@ from tabpfn_common_utils.usage_analytics.analytics_func import (
 
 ANALYTICS_TO_TRACK = [
     ("X-Unique-Call-Id", get_unique_call_id),
-    ("X-Calling-Class", get_calling_class),
     ("X-Python-Version", get_python_version),
+    ("X-Calling-Class", get_calling_class),
+    ("X-Module-Name", None),  # Value provided by AnalyticsHttpClient
 ]
