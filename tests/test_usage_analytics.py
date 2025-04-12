@@ -1,5 +1,5 @@
 import unittest
-from tabpfn_common_utils.usage_analytics import get_calling_class
+from usage_analytics import get_calling_class
 
 
 class TestGetCallingClass(unittest.TestCase):
