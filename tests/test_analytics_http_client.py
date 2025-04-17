@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import patch, MagicMock
-import http
 import httpx
 from usage_analytics import AnalyticsHttpClient, ANALYTICS_HEADER_CONFIG
 
@@ -45,7 +44,7 @@ class TestAnalyticsHttpClient(unittest.TestCase):
 
         # Check that super().stream was called with modified headers
         args, kwargs = mock_stream.call_args
-        self.assertEqual(args[0], http.RequestMethod.GET)
+        self.assertEqual(args[0], "GET")
         self.assertEqual(args[1], self.local_host)
 
         # Verify headers were added
@@ -58,7 +57,7 @@ class TestAnalyticsHttpClient(unittest.TestCase):
             self.assertIsNotNone(headers.get(header_name))
 
     @patch("usage_analytics.analytics_func.get_unique_call_id")
-    def test_unique_call_id_header(self, mock_get_unique_call_id):
+    def test_unique_call_id_header(self, mock_get_unique_call_id: MagicMock):
         """Test that the unique call ID is correctly added to headers."""
         mock_unique_id = "test-unique-id-123"
         mock_get_unique_call_id.return_value = mock_unique_id
@@ -76,7 +75,7 @@ class TestAnalyticsHttpClient(unittest.TestCase):
             mock_get_unique_call_id.assert_called_once()
 
     @patch("usage_analytics.analytics_func.get_python_version")
-    def test_python_version_header(self, mock_get_python_version):
+    def test_python_version_header(self, mock_get_python_version: MagicMock):
         """Test that the Python version is correctly added to headers."""
         mock_python_version = "3.9.0"
         mock_get_python_version.return_value = mock_python_version
@@ -94,7 +93,7 @@ class TestAnalyticsHttpClient(unittest.TestCase):
             mock_get_python_version.assert_called_once()
 
     @patch("usage_analytics.analytics_func.get_calling_class")
-    def test_calling_class_header(self, mock_get_calling_class):
+    def test_calling_class_header(self, mock_get_calling_class: MagicMock):
         """Test that the calling class is correctly added to headers."""
         mock_calling_class = "TestClass"
         mock_get_calling_class.return_value = mock_calling_class

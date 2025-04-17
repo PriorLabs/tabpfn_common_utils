@@ -33,6 +33,10 @@ class AnalyticsHttpClient(httpx.Client):
         self._module_name = module_name
         self._analytics_config = analytics_config
 
+    @property
+    def module_name(self) -> str:
+        return self._module_name
+
     def set_module_name(self, module_name: str) -> None:
         self._module_name = module_name
 
