@@ -1,13 +1,15 @@
 import unittest
 from unittest.mock import patch, MagicMock
+import http
 import httpx
-from usage_analytics import AnalyticsHttpClient, ANALYTICS_TO_TRACK
+from usage_analytics import AnalyticsHttpClient, ANALYTICS_HEADER_CONFIG
 
 
 class TestAnalyticsHttpClient(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.module_name = "test_module"
         self.client = AnalyticsHttpClient(module_name=self.module_name)
+        self.local_host = "http://localhost:8000"
 
     def test_init(self):
         """Test that the client initializes with the correct module name."""
@@ -22,13 +24,13 @@ class TestAnalyticsHttpClient(unittest.TestCase):
 
         # Call request method
         self.client.request(
-            "GET", "https://example.com", headers={"Existing": "Header"}
+            http.RequestMethod.GET, self.local_host, headers={"Existing": "Header"}
         )
 
         # Check that super().request was called with modified headers
         args, kwargs = mock_request.call_args
-        self.assertEqual(args[0], "GET")
-        self.assertEqual(args[1], "https://example.com")
+        self.assertEqual(args[0], http.RequestMethod.GET)
+        self.assertEqual(args[1], self.local_host)
 
         # Verify headers were added
         headers = kwargs.get("headers", {})
@@ -45,19 +47,21 @@ class TestAnalyticsHttpClient(unittest.TestCase):
         mock_super.return_value.stream = mock_stream
 
         # Call stream method
-        self.client.stream("GET", "https://example.com", headers={"Existing": "Header"})
+        self.client.stream(
+            http.RequestMethod.GET, self.local_host, headers={"Existing": "Header"}
+        )
 
         # Check that super().stream was called with modified headers
         args, kwargs = mock_stream.call_args
-        self.assertEqual(args[0], "GET")
-        self.assertEqual(args[1], "https://example.com")
+        self.assertEqual(args[0], http.RequestMethod.GET)
+        self.assertEqual(args[1], self.local_host)
 
         # Verify headers were added
         headers = kwargs.get("headers", {})
         self.assertEqual(headers.get("Existing"), "Header")
 
         # Verify all analytics headers from ANALYTICS_TO_TRACK were added
-        for header_name, _ in ANALYTICS_TO_TRACK:
+        for header_name, _ in ANALYTICS_HEADER_CONFIG:
             self.assertIn(header_name, headers)
 
         # Verify specific header values
