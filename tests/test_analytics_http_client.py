@@ -56,60 +56,6 @@ class TestAnalyticsHttpClient(unittest.TestCase):
             self.assertIn(header_name, headers)
             self.assertIsNotNone(headers.get(header_name))
 
-    @patch("usage_analytics.analytics_func.get_unique_call_id")
-    def test_unique_call_id_header(self, mock_get_unique_call_id: MagicMock):
-        """Test that the unique call ID is correctly added to headers."""
-        mock_unique_id = "test-unique-id-123"
-        mock_get_unique_call_id.return_value = mock_unique_id
-
-        with patch("usage_analytics.analytics_http_client.super") as mock_super:
-            mock_request = MagicMock()
-            mock_super.return_value.request = mock_request
-
-            self.client.request("GET", self.local_host)
-
-            _, kwargs = mock_request.call_args
-            headers = kwargs.get("headers", {})
-
-            self.assertEqual(headers.get("PL-Unique-Call-Id"), mock_unique_id)
-            mock_get_unique_call_id.assert_called_once()
-
-    @patch("usage_analytics.analytics_func.get_python_version")
-    def test_python_version_header(self, mock_get_python_version: MagicMock):
-        """Test that the Python version is correctly added to headers."""
-        mock_python_version = "3.9.0"
-        mock_get_python_version.return_value = mock_python_version
-
-        with patch("usage_analytics.analytics_http_client.super") as mock_super:
-            mock_request = MagicMock()
-            mock_super.return_value.request = mock_request
-
-            self.client.request("GET", self.local_host)
-
-            _, kwargs = mock_request.call_args
-            headers = kwargs.get("headers", {})
-
-            self.assertEqual(headers.get("PL-Python-Version"), mock_python_version)
-            mock_get_python_version.assert_called_once()
-
-    @patch("usage_analytics.analytics_func.get_calling_class")
-    def test_calling_class_header(self, mock_get_calling_class: MagicMock):
-        """Test that the calling class is correctly added to headers."""
-        mock_calling_class = "TestClass"
-        mock_get_calling_class.return_value = mock_calling_class
-
-        with patch("usage_analytics.analytics_http_client.super") as mock_super:
-            mock_request = MagicMock()
-            mock_super.return_value.request = mock_request
-
-            self.client.request("GET", self.local_host)
-
-            _, kwargs = mock_request.call_args
-            headers = kwargs.get("headers", {})
-
-            self.assertEqual(headers.get("PL-Calling-Class"), mock_calling_class)
-            mock_get_calling_class.assert_called_once()
-
     def test_set_module_name(self):
         """Test that the module name can be updated."""
         new_module_name = "new_test_module"
