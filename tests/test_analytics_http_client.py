@@ -17,7 +17,7 @@ class TestAnalyticsHttpClient(unittest.TestCase):
         self.assertIsInstance(self.client, httpx.Client)
 
     @patch("usage_analytics.analytics_http_client.super")
-    def test_request_adds_headers(self, mock_super):
+    def test_request_adds_headers(self, mock_super: MagicMock):
         """Test that request method adds analytics headers."""
         mock_request = MagicMock()
         mock_super.return_value.request = mock_request
@@ -41,7 +41,7 @@ class TestAnalyticsHttpClient(unittest.TestCase):
         self.assertIn("X-Calling-Class", headers)
 
     @patch("usage_analytics.analytics_http_client.super")
-    def test_stream_adds_headers(self, mock_super):
+    def test_stream_adds_headers(self, mock_super: MagicMock):
         """Test that stream method adds analytics headers."""
         mock_stream = MagicMock()
         mock_super.return_value.stream = mock_stream
