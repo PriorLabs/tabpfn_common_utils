@@ -1,7 +1,7 @@
 from .analytics_http_client import AnalyticsHttpClient
-from .analytics_definition import ANALYTICS_TO_TRACK
+from .analytics_config import ANALYTICS_HEADER_CONFIG
 
 __all__ = [
     "AnalyticsHttpClient",
-    "ANALYTICS_TO_TRACK",
+    "ANALYTICS_HEADER_CONFIG",
 ]
