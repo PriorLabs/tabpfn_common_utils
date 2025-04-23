@@ -26,7 +26,7 @@ class RegressionPredictResult:
 
     @staticmethod
     def to_basic_representation(res: "RegressionPredictResult") -> dict[str, list]:
-        if res.val_type == list:
+        if res.val_type is list:
             return res
 
         serialize_fn = np.ndarray.tolist
