@@ -4,7 +4,7 @@ from io import BytesIO
 import numpy as np
 import pandas as pd
 
-from utils import (
+from tabpfn_common_utils.utils import (
     serialize_to_csv_formatted_bytes,
     assert_y_pred_proba_is_valid,
 )
