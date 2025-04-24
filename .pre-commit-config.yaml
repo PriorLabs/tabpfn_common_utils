@@ -12,3 +12,7 @@ repos:
   hooks:
     - id: no-commit-to-branch
       args: ['--branch', 'main']
+- repo: https://github.com/RobertCraigie/pyright-python
+  rev: v1.1.399
+  hooks:
+  - id: pyright

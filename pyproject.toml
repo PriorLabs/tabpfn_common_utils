@@ -17,6 +17,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "pyright>=1.1.399",
     "pytest>=8.3.5",
     "ruff>=0.11.6",
 ]
@@ -29,4 +30,19 @@ target-version = "py310"
 [tool.pytest.ini_options]
 testpaths = [
     "tests",
+]
+
+[tool.pyright]
+# Specify directories to include in type checking
+include = ["src", "tests"]
+# TODO: Fix types and enable this.
+exclude = [
+    "tests/test_expense_estimation.py",
+    "tests/test_load_test.py",
+    "tests/test_regression_pred_result.py",
+    "tests/test_utils.py",
+    "src/tabpfn_common_utils/expense_estimation.py",
+    "src/tabpfn_common_utils/load_test.py",
+    "src/tabpfn_common_utils/regression_pred_result.py",
+    "src/tabpfn_common_utils/utils.py"
 ]
