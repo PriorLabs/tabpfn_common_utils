@@ -1,5 +1,5 @@
 import unittest
-from expense_estimation import (
+from tabpfn_common_utils.expense_estimation import (
     estimate_duration,
     VERTEX_GPU_FACTOR,
 )
