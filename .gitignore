@@ -165,3 +165,7 @@ devenv.local.nix
 
 # direnv
 .direnv
+
+# Ignore devenv because not every developer uses it.
+devenv*
+.envrc
