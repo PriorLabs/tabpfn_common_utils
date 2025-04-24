@@ -14,6 +14,28 @@ jobs:
         with:
           src: "./"
 
+  check_python_typing:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x64
+
+    - name: Setup UV with cache
+      id: setup-uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+    - name: Install dependencies
+      run: |
+        uv sync 
+        . .venv/bin/activate
+        echo PATH=$PATH >> $GITHUB_ENV
+
+    - uses: jakebailey/pyright-action@v2
+
   test_compatibility:
     name: Test Python Compatibility
     strategy:
