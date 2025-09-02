@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from posthog import Posthog
 from .events import BaseTelemetryEvent
-from .utils import singleton
+from ..utils import singleton
 from typing import Any, Dict, Optional
 
 
