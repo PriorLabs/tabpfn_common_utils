@@ -1,0 +1,108 @@
+import os
+import uuid
+
+from datetime import datetime
+from posthog import Posthog
+from .events import BaseTelemetryEvent
+from .utils import singleton
+from typing import Any, Dict, Optional
+
+
+@singleton
+class ProductTelemetry:
+    """
+    Service for capturing anonymous and aggregated telemetry data.
+    """
+
+    # Public PostHog project API key
+    PROJECT_API_KEY = "phc_pie1loFCRaEoF0fV3x5WXa2RmifsJyw1csamueAnQ7i"
+
+    # Public PostHog host (EU)
+    HOST = "https://eu.i.posthog.com"
+
+    # PostHog client instance
+    _posthog_client: Optional[Posthog] = None
+
+    def __init__(self) -> None:
+        """
+        Initialize the Telemetry service.
+        """
+        # If telemetry is disabled, don't initialize the PostHog client
+        if not self.telemetry_enabled():
+            self._posthog_client = None
+            return
+
+        # Initialize the PostHog client
+        self._posthog_client = Posthog(
+            project_api_key=self.PROJECT_API_KEY,
+            host=self.HOST,
+            disable_geoip=True,
+            enable_exception_autocapture=False,
+            max_queue_size=1_000,
+            flush_at=100,
+        )
+
+    @staticmethod
+    def telemetry_enabled() -> bool:
+        """
+        Check if telemetry is enabled.
+
+        Returns:
+            bool: True if telemetry is enabled, False otherwise.
+        """
+        return os.getenv("TELEMETRY_ENABLED", "true").lower() == "true"
+
+    def capture(
+        self,
+        event: BaseTelemetryEvent,
+        *,
+        distinct_id: Optional[str] = None,
+        properties: Optional[Dict[str, Any]] = None,
+        timestamp: Optional[datetime] = None,
+    ) -> None:
+        """
+        Send an event. Optionally override distinct_id (useful in API).
+
+        Args:
+            event (BaseTelemetryEvent): The event to send.
+            distinct_id (str): The distinct ID to send the event to.
+            groups (dict): The groups to send the event to.
+        """
+        if self._posthog_client is None:
+            return
+
+        # Distinct ID or randomly generated UUID in case user did not provide
+        # explicit consent to opt in to telemetry
+        user_id = distinct_id or str(uuid.uuid4())
+
+        # Merge the event properties with the provided properties
+        properties = {**(properties or {}), **event.properties}
+
+        # Add the timestamp to the properties
+        if timestamp:
+            properties["$ignore_sent_at"] = True
+            properties["timestamp"] = timestamp
+
+        try:
+            self._posthog_client.capture(
+                distinct_id=user_id,
+                event=event.name,
+                properties=properties,
+                timestamp=timestamp or event.timestamp,
+            )
+        except Exception:
+            # Silently ignore any errors
+            pass
+
+    def flush(self) -> None:
+        """
+        Flush the PostHog client telemetry queue.
+        """
+        if not self._posthog_client:
+            return
+
+        try:
+            self._posthog_client.flush()
+        except Exception:
+            # Silently ignore any errors
+            pass
