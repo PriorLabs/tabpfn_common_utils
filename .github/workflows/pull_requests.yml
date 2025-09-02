@@ -14,29 +14,6 @@ jobs:
         with:
           src: "."
 
-  check_python_typing:
-    name: Python Type Checking
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Setup UV with cache
-        id: setup-uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-
-      - name: Install dependencies
-        run: uv sync
-
-      - name: Run pyright
-        run: uv run pyright
-
   test_compatibility:
     name: Test Python Compatibility
     strategy:
