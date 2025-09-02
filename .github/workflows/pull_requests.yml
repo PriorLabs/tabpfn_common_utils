@@ -32,10 +32,10 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: |
-          uv sync
+        run: uv sync
 
-      - uses: jakebailey/pyright-action@v2
+      - name: Run pyright
+        run: uv run pyright
 
   test_compatibility:
     name: Test Python Compatibility
@@ -69,9 +69,7 @@ jobs:
 
       # Install dev extras so pytest is available.
       - name: Install dependencies
-        run: |
-          uv sync --extra dev
+        run: uv sync --extra dev
 
       - name: Run Tests
-        run: |
-          uv run pytest -q
+        run: uv run pytest -q
