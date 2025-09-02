@@ -12,29 +12,30 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3
         with:
-          src: "./"
+          src: "."
 
   check_python_typing:
-    - uses: actions/checkout@v4
+    name: Python Type Checking
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: x64
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Setup UV with cache
-      id: setup-uv
-      uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true
-    - name: Install dependencies
-      run: |
-        uv sync 
-        . .venv/bin/activate
-        echo PATH=$PATH >> $GITHUB_ENV
+      - name: Setup UV with cache
+        id: setup-uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
-    - uses: jakebailey/pyright-action@v2
+      - name: Install dependencies
+        run: |
+          uv sync
+
+      - uses: jakebailey/pyright-action@v2
 
   test_compatibility:
     name: Test Python Compatibility
@@ -44,35 +45,33 @@ jobs:
         include:
           - os: ubuntu-latest
             python-version: "3.9"
-          - os: macos-13 # macos-latest doesn't work with python 3.10
-            # https://github.com/actions/setup-python/issues/855
+          - os: macos-13
             python-version: "3.9"
           - os: ubuntu-latest
             python-version: "3.13"
           - os: macos-latest
             python-version: "3.13"
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
 
       - name: Setup UV with cache
         id: setup-uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
+      # Install dev extras so pytest is available.
       - name: Install dependencies
         run: |
-          uv sync 
-          . .venv/bin/activate
-          echo PATH=$PATH >> $GITHUB_ENV
+          uv sync --extra dev
 
       - name: Run Tests
         run: |
-          pytest
+          uv run pytest -q
