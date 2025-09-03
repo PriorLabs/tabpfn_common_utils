@@ -6,6 +6,7 @@ from tabpfn_common_utils.telemetry.events import (
     BaseTelemetryEvent,
     DatasetEvent,
     FitEvent,
+    PingEvent,
     PredictEvent,
     _get_py_version,
     _utc_now,
@@ -315,6 +316,63 @@ class TestPredictEvent:
         assert "timestamp" in props
 
 
+class TestPingEvent:
+    """Test PingEvent class"""
+
+    def test_ping_event_initialization(self):
+        """Test PingEvent initialization"""
+        event = PingEvent()
+
+        assert event.name == "ping"
+
+    def test_ping_event_inherits_base_properties(self):
+        """Test that PingEvent inherits base telemetry properties"""
+        event = PingEvent()
+
+        assert isinstance(event.python_version, str)
+        assert isinstance(event.tabpfn_version, str)
+        assert isinstance(event.timestamp, datetime)
+        assert event.source == "sdk"
+
+    def test_ping_event_properties_method(self):
+        """Test PingEvent properties method"""
+        event = PingEvent()
+
+        props = event.properties
+
+        # Should not contain 'name'
+        assert "name" not in props
+
+        # Should contain base properties
+        assert "python_version" in props
+        assert "tabpfn_version" in props
+        assert "timestamp" in props
+
+        # Should be minimal - only base properties
+        assert len(props) == 3
+
+    def test_ping_event_minimal_structure(self):
+        """Test that PingEvent has minimal structure (no additional fields)"""
+        event = PingEvent()
+
+        # Should only have base properties and name
+        expected_attrs = {
+            "python_version",
+            "tabpfn_version", 
+            "timestamp",
+            "source",
+            "name",
+            "properties"
+        }
+        
+        actual_attrs = set(dir(event))
+        # Filter out private attributes and methods
+        public_attrs = {attr for attr in actual_attrs if not attr.startswith('_')}
+        
+        # Should only have the expected attributes
+        assert public_attrs == expected_attrs
+
+
 class TestEventIntegration:
     """Integration tests for all event types"""
 
@@ -324,6 +382,7 @@ class TestEventIntegration:
             DatasetEvent(task="classification", role="train"),
             FitEvent(task="classification"),
             PredictEvent(task="classification"),
+            PingEvent(),
         ]
 
         for event in events:
@@ -358,6 +417,7 @@ class TestEventIntegration:
             PredictEvent(
                 task="classification", num_rows=50, num_columns=5, duration_ms=800
             ),
+            PingEvent(),
         ]
 
         for event in events:

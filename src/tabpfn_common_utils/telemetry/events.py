@@ -83,6 +83,17 @@ class BaseTelemetryEvent:
 
 
 @dataclass
+class PingEvent(BaseTelemetryEvent):
+    """
+    Event emitted when a ping is sent.
+    """
+
+    @property
+    def name(self) -> str:
+        return "ping"
+
+
+@dataclass
 class DatasetEvent(BaseTelemetryEvent):
     """
     Event emitted when a dataset is loaded. No data is sent with this event.

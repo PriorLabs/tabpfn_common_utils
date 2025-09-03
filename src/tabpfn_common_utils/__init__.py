@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .telemetry.events import DatasetEvent, FitEvent, PredictEvent
+from .telemetry.events import DatasetEvent, FitEvent, PingEvent, PredictEvent
 from .telemetry.service import ProductTelemetry
 
 try:
@@ -16,6 +16,7 @@ __version__ = _pkg_version("tabpfn-common-utils")
 __all__ = [
     "DatasetEvent",
     "FitEvent",
+    "PingEvent",
     "PredictEvent",
     "ProductTelemetry",
     "__version__"
