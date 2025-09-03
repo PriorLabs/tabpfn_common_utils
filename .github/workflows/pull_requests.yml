@@ -16,6 +16,8 @@ jobs:
           src: "."
 
   check_python_typing:
+    name: Python type checking
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
