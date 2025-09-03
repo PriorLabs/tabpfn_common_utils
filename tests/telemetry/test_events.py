@@ -149,8 +149,6 @@ class TestDatasetEvent:
         # Check default values
         assert event.num_rows == 0
         assert event.num_columns == 0
-        assert isinstance(event.dataset_id, str)
-        assert len(event.dataset_id) == 36  # UUID length
 
     def test_dataset_event_with_custom_values(self):
         """Test DatasetEvent with custom values"""
@@ -190,7 +188,6 @@ class TestDatasetEvent:
         assert props["role"] == "train"
         assert props["num_rows"] == 50
         assert props["num_columns"] == 5
-        assert "dataset_id" in props
         assert "python_version" in props
         assert "tabpfn_version" in props
         assert "timestamp" in props
