@@ -33,9 +33,9 @@ jobs:
           enable-cache: true
       
       - name: Run Pyright
-        run:
-          - uv sync --extra dev
-          - uv run pyright
+        run: |
+          uv sync --extra dev
+          uv run pyright
 
   test_compatibility:
     name: Test Python Compatibility
