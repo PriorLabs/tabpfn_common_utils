@@ -66,7 +66,8 @@ class ProductTelemetry:
         Args:
             event (BaseTelemetryEvent): The event to send.
             distinct_id (str): The distinct ID to send the event to.
-            groups (dict): The groups to send the event to.
+            properties (dict): The additional properties attached to an event.
+            timestamp (datetime): The timestamp of the event.
         """
         if self._posthog_client is None:
             return

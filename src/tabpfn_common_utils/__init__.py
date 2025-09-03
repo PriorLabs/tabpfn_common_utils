@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from .telemetry.events import DatasetEvent, FitEvent, PingEvent, PredictEvent
-from .telemetry.service import ProductTelemetry
 
 try:
     from importlib.metadata import version as _pkg_version
@@ -12,12 +10,3 @@ except ImportError:
 # Package version
 __version__ = _pkg_version("tabpfn-common-utils")
 
-# Public exports
-__all__ = [
-    "DatasetEvent",
-    "FitEvent",
-    "PingEvent",
-    "PredictEvent",
-    "ProductTelemetry",
-    "__version__"
-]

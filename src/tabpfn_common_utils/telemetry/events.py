@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 
 def _uuid4() -> str:
@@ -110,9 +110,6 @@ class DatasetEvent(BaseTelemetryEvent):
 
     # Number of columns in the dataset
     num_columns: int = 0
-
-    # Privacy-friendly identifiers
-    dataset_id: Optional[str] = field(default_factory=_uuid4)
 
     @property
     def name(self) -> str:
