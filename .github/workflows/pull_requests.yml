@@ -5,6 +5,7 @@ on:
       - main
 
 jobs:
+
   check_python_linting:
     name: Ruff Linting & Formatting
     runs-on: ubuntu-latest
@@ -15,23 +16,24 @@ jobs:
           src: "."
 
   check_python_typing:
-    - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Setup UV with cache
-      id: setup-uv
-      uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true
-    
-    - name: Run Pyright
-      run:
-        - uv sync --extra dev
-        - uv run pyright
+      - name: Setup UV with cache
+        id: setup-uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      
+      - name: Run Pyright
+        run:
+          - uv sync --extra dev
+          - uv run pyright
 
   test_compatibility:
     name: Test Python Compatibility
