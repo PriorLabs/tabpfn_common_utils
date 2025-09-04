@@ -74,7 +74,7 @@ class ProductTelemetry:
 
         # Distinct ID or randomly generated UUID in case user did not provide
         # explicit consent to opt in to telemetry
-        user_id = distinct_id or str(uuid.uuid4())
+        user_id = distinct_id or "00000000-0000-0000-0000-000000000000"
 
         # Merge the event properties with the provided properties
         properties = {**(properties or {}), **event.properties}
