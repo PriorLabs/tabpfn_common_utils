@@ -71,8 +71,7 @@ class ProductTelemetry:
         if self._posthog_client is None:
             return
 
-        # Distinct ID or randomly generated UUID in case user did not provide
-        # explicit consent to opt in to telemetry
+        # Anonymous default UUID in case no explicit consent to opt in to telemetry
         user_id = distinct_id or "00000000-0000-0000-0000-000000000000"
 
         # Merge the event properties with the provided properties
