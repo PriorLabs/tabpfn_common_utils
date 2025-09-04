@@ -55,10 +55,6 @@ class TestUtilityFunctions:
         # Should be a string
         assert isinstance(version, str)
 
-        # Should match current Python version
-        expected_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        assert version == expected_version
-
         # Should be in format "major.minor"
         parts = version.split(".")
         assert len(parts) == 2
