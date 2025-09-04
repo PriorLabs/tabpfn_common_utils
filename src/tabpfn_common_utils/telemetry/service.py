@@ -76,7 +76,7 @@ class ProductTelemetry:
         user_id = distinct_id or "00000000-0000-0000-0000-000000000000"
 
         # Merge the event properties with the provided properties
-        properties = {**(properties or {}), **event.properties}
+        properties = {**event.properties, **(properties or {})}
 
         # Add the timestamp to the properties
         if timestamp:

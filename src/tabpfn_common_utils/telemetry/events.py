@@ -51,7 +51,7 @@ def _get_sdk_version() -> str:
 
         return getattr(tabpfn, "__version__", "unknown")
     except ImportError:
-        return "2.1.3"  # Fallback to default version
+        return "unknown"  # tabpfn is not installed
 
 
 @dataclass
