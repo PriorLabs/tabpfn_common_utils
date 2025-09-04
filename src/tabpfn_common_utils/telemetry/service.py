@@ -14,7 +14,7 @@ class ProductTelemetry:
     """
 
     # Public PostHog project API key
-    PROJECT_API_KEY = "phc_pie1loFCRaEoF0fV3x5WXa2RmifsJyw1csamueAnQ7i"
+    PROJECT_API_KEY = "phc_wemJSoR4e8rGJomHz0clm6aHdOWp0EvpRP368uVsUvJ"
 
     # Public PostHog host (EU)
     HOST = "https://eu.i.posthog.com"
