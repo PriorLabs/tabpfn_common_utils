@@ -79,7 +79,10 @@ class BaseTelemetryEvent:
 
     @property
     def properties(self) -> dict[str, Any]:
-        return {k: v for k, v in asdict(self).items() if k not in ("name",)}
+        d = asdict(self)
+        d.pop("timestamp", None)
+        d.pop("name", None)
+        return d
 
 
 @dataclass

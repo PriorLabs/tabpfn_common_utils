@@ -49,7 +49,7 @@ class ProductTelemetry:
         Returns:
             bool: True if telemetry is enabled, False otherwise.
         """
-        return os.getenv("TELEMETRY_ENABLED", "true").lower() == "true"
+        return os.getenv("TABPFN_DISABLE_TELEMETRY", "0").lower() not in ("1", "true")
 
     def capture(
         self,
@@ -76,11 +76,6 @@ class ProductTelemetry:
 
         # Merge the event properties with the provided properties
         properties = {**event.properties, **(properties or {})}
-
-        # Add the timestamp to the properties
-        if timestamp:
-            properties["$ignore_sent_at"] = True
-            properties["timestamp"] = timestamp
 
         try:
             self._posthog_client.capture(

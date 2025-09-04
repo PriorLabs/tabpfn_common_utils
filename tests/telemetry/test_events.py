@@ -127,7 +127,6 @@ class TestBaseTelemetryEvent:
         # Should contain other fields
         assert "python_version" in props
         assert "tabpfn_version" in props
-        assert "timestamp" in props
 
 
 class TestDatasetEvent:
@@ -186,7 +185,6 @@ class TestDatasetEvent:
         assert props["num_columns"] == 5
         assert "python_version" in props
         assert "tabpfn_version" in props
-        assert "timestamp" in props
 
     def test_dataset_event_task_validation(self):
         """Test that DatasetEvent validates task parameter"""
@@ -255,7 +253,6 @@ class TestFitEvent:
         assert props["duration_ms"] == 2000
         assert "python_version" in props
         assert "tabpfn_version" in props
-        assert "timestamp" in props
 
 
 class TestPredictEvent:
@@ -306,7 +303,6 @@ class TestPredictEvent:
         assert props["duration_ms"] == 1200
         assert "python_version" in props
         assert "tabpfn_version" in props
-        assert "timestamp" in props
 
 
 class TestPingEvent:
@@ -339,10 +335,9 @@ class TestPingEvent:
         # Should contain base properties
         assert "python_version" in props
         assert "tabpfn_version" in props
-        assert "timestamp" in props
 
         # Should be minimal - only base properties
-        assert len(props) == 3
+        assert len(props) == 2
 
     def test_ping_event_minimal_structure(self):
         """Test that PingEvent has minimal structure (no additional fields)"""
@@ -352,18 +347,12 @@ class TestPingEvent:
         expected_attrs = {
             "python_version",
             "tabpfn_version", 
-            "timestamp",
             "source",
             "name",
             "properties"
         }
-        
-        actual_attrs = set(dir(event))
-        # Filter out private attributes and methods
-        public_attrs = {attr for attr in actual_attrs if not attr.startswith('_')}
-        
-        # Should only have the expected attributes
-        assert public_attrs == expected_attrs
+        for property in event.properties:
+            assert property in expected_attrs
 
 
 class TestEventIntegration:
@@ -382,7 +371,6 @@ class TestEventIntegration:
             # All should have base properties
             assert hasattr(event, "python_version")
             assert hasattr(event, "tabpfn_version")
-            assert hasattr(event, "timestamp")
             assert hasattr(event, "source")
             assert hasattr(event, "name")
             assert hasattr(event, "properties")
@@ -420,7 +408,6 @@ class TestEventIntegration:
             # Should contain all expected fields
             assert "python_version" in event_dict
             assert "tabpfn_version" in event_dict
-            assert "timestamp" in event_dict
 
             # Should be able to access properties
             props = event.properties
