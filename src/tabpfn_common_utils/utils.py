@@ -70,7 +70,7 @@ def singleton(cls):
 
 def get_example_dataset(
     dataset_name: typing.Literal["iris", "breast_cancer", "digits", "diabetes"],
-) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.DataFrame]:
+) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     load_dataset_fn = {
         "iris": load_iris,
         "breast_cancer": load_breast_cancer,
