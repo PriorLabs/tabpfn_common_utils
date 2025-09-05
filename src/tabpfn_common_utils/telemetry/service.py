@@ -22,7 +22,7 @@ class ProductTelemetry:
     # PostHog client instance
     _posthog_client: Optional[Posthog] = None
 
-    def __init__(self) -> None:
+    def __init__(self, max_queue_size: int = 10, flush_at: int = 10) -> None:
         """
         Initialize the Telemetry service.
         """
@@ -37,8 +37,8 @@ class ProductTelemetry:
             host=self.HOST,
             disable_geoip=True,
             enable_exception_autocapture=False,
-            max_queue_size=1_000,
-            flush_at=100,
+            max_queue_size=max_queue_size,
+            flush_at=flush_at,
         )
 
     @staticmethod
