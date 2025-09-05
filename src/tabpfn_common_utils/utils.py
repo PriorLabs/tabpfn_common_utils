@@ -91,7 +91,7 @@ def get_example_dataset(
         x_train, y_train, test_size=0.33, random_state=42
     )
 
-    return typing.cast(typing.Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame], (x_train, x_test, y_train, y_test))
+    return typing.cast(typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series], (x_train, x_test, y_train, y_test))
 
 
 def get_dataset_with_specific_size(
