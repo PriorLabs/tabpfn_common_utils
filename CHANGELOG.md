@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2024-12-19
+
+### Changed
+- **Pandas Compatibility**: Updated pandas requirement to match tabpfn requirements for better ecosystem compatibility
+
 ## [0.1.2] - 2024-12-19
 
 ### Changed
