@@ -1,8 +1,9 @@
 import numpy as np
+from typing import Dict, Any, List
 
 
 class RegressionPredictResult:
-    def __init__(self, res: {}):
+    def __init__(self, res: Dict[str, Any]):
         self.mean = res["mean"]
         self.median = res["median"]
         self.mode = res["mode"]
@@ -25,9 +26,14 @@ class RegressionPredictResult:
         return self._val_type
 
     @staticmethod
-    def to_basic_representation(res: "RegressionPredictResult") -> dict[str, list]:
+    def to_basic_representation(res: "RegressionPredictResult") -> Dict[str, List]:
         if res.val_type is list:
-            return res
+            return {
+                "mean": res.mean,
+                "median": res.median,
+                "mode": res.mode,
+                **res.quantiles,
+            }
 
         serialize_fn = np.ndarray.tolist
 
@@ -39,7 +45,7 @@ class RegressionPredictResult:
         }
 
     @staticmethod
-    def from_basic_representation(basic_repr: dict[str, list]) -> dict[str, np.ndarray]:
+    def from_basic_representation(basic_repr: Dict[str, List]) -> Dict[str, np.ndarray]:
         deserialize_fn = np.array
 
         return {

@@ -26,18 +26,20 @@ def serialize_to_csv_formatted_bytes(
 
 FileName = str
 FileContent = bytes
-FileUpload = typing.Tuple[FileName, FileContent]
+FileCategory = str
+FileUpload = typing.Tuple[FileCategory, FileName, FileContent]
 
 
 def to_httpx_post_file_format(file_uploads: typing.List[FileUpload]) -> typing.Dict:
     ret = {}
-    for file_category, filename, content in file_uploads:
+    for file_upload in file_uploads:
+        file_category, filename, content = file_upload
         ret[file_category] = (filename, content)
 
     return ret
 
 
-def to_oauth_request_form(username: str, password: str) -> {}:
+def to_oauth_request_form(username: str, password: str) -> Dict[str, str]:
     return {"grant_type": "password", "username": username, "password": password}
 
 
@@ -46,9 +48,29 @@ class Singleton:
         raise TypeError("Cannot instantiate this class. This is a singleton.")
 
 
+def singleton(cls):
+    """
+    Decorator to make a class a singleton.
+
+    Args:
+        cls: The class to make a singleton.
+
+    Returns:
+        The singleton instance of the class.
+    """
+    instance = [None]
+
+    def wrapper(*args, **kwargs):
+        if instance[0] is None:
+            instance[0] = cls(*args, **kwargs)
+        return instance[0]
+
+    return wrapper
+
+
 def get_example_dataset(
     dataset_name: typing.Literal["iris", "breast_cancer", "digits", "diabetes"],
-) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     load_dataset_fn = {
         "iris": load_iris,
         "breast_cancer": load_breast_cancer,
@@ -69,7 +91,7 @@ def get_example_dataset(
         x_train, y_train, test_size=0.33, random_state=42
     )
 
-    return x_train, x_test, y_train, y_test
+    return typing.cast(typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series], (x_train, x_test, y_train, y_test))
 
 
 def get_dataset_with_specific_size(

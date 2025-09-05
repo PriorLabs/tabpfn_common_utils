@@ -5,6 +5,7 @@ on:
       - main
 
 jobs:
+
   check_python_linting:
     name: Ruff Linting & Formatting
     runs-on: ubuntu-latest
@@ -12,29 +13,42 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3
         with:
-          src: "./"
+          src: "."
 
   check_python_typing:
-    - uses: actions/checkout@v4
+    name: Python type checking
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: "3.9"
+          - os: ubuntu-latest
+            python-version: "3.11"
+          - os: ubuntu-latest
+            python-version: "3.12"
+          - os: macos-latest
+            python-version: "3.11"
+  
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: x64
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Setup UV with cache
-      id: setup-uv
-      uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true
-    - name: Install dependencies
-      run: |
-        uv sync 
-        . .venv/bin/activate
-        echo PATH=$PATH >> $GITHUB_ENV
-
-    - uses: jakebailey/pyright-action@v2
+      - name: Setup UV with cache
+        id: setup-uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      
+      - name: Run Pyright
+        run: |
+          uv sync --extra dev
+          uv run pyright
 
   test_compatibility:
     name: Test Python Compatibility
@@ -44,35 +58,33 @@ jobs:
         include:
           - os: ubuntu-latest
             python-version: "3.9"
-          - os: macos-13 # macos-latest doesn't work with python 3.10
-            # https://github.com/actions/setup-python/issues/855
+          # macos-latest doesn't work with python 3.10
+          # https://github.com/actions/setup-python/issues/855
+          - os: macos-13
             python-version: "3.9"
           - os: ubuntu-latest
             python-version: "3.13"
           - os: macos-latest
             python-version: "3.13"
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
 
       - name: Setup UV with cache
         id: setup-uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
+      # Install dev extras so pytest is available.
       - name: Install dependencies
-        run: |
-          uv sync 
-          . .venv/bin/activate
-          echo PATH=$PATH >> $GITHUB_ENV
+        run: uv sync --extra dev
 
       - name: Run Tests
-        run: |
-          pytest
+        run: uv run pytest -q
