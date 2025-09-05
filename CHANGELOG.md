@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2024-12-19
+
+### Changed
+- **NumPy Compatibility**: Updated `scikit-learn` dependency to match `tabpfn` requirements
+- **Development Dependencies**: Added pytest as an explicit dev dependency for consistent testing across environments
+
 ## [0.1.1] - 2024-12-19
 
 ### Added
