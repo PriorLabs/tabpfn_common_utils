@@ -2,7 +2,7 @@ import pytest
 import sys
 from datetime import datetime, timezone
 
-from tabpfn_common_utils.telemetry.events import (
+from tabpfn_common_utils.telemetry.core.events import (
     BaseTelemetryEvent,
     DatasetEvent,
     FitEvent,
@@ -337,7 +337,7 @@ class TestPingEvent:
         assert "tabpfn_version" in props
 
         # Should be minimal - only base properties
-        assert len(props) == 2
+        assert len(props) == 3
 
     def test_ping_event_minimal_structure(self):
         """Test that PingEvent has minimal structure (no additional fields)"""
@@ -346,10 +346,11 @@ class TestPingEvent:
         # Should only have base properties and name
         expected_attrs = {
             "python_version",
-            "tabpfn_version", 
+            "tabpfn_version",
             "source",
             "name",
-            "properties"
+            "properties",
+            "extension",
         }
         for property in event.properties:
             assert property in expected_attrs

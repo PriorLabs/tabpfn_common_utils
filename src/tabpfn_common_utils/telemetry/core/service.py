@@ -2,8 +2,8 @@ import os
 
 from datetime import datetime
 from posthog import Posthog
-from .events import BaseTelemetryEvent
-from ..utils import singleton
+from tabpfn_common_utils.telemetry.core.events import BaseTelemetryEvent
+from tabpfn_common_utils.utils import singleton
 from typing import Any, Dict, Optional
 
 
@@ -100,3 +100,17 @@ class ProductTelemetry:
         except Exception:
             # Silently ignore any errors
             pass
+
+
+def capture_event(
+    event: BaseTelemetryEvent, max_queue_size: int = 10, flush_at: int = 10
+) -> None:
+    """Capture a telemetry event.
+
+    Args:
+        event: The event to capture.
+        max_queue_size: The maximum size of the queue.
+        flush_at: The number of events to flush.
+    """
+    client = ProductTelemetry(max_queue_size, flush_at)
+    client.capture(event)

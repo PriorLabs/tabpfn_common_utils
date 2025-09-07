@@ -68,6 +68,38 @@ def singleton(cls):
     return wrapper
 
 
+def shape_of(X: Any) -> tuple[int, int]:
+    """Get the input dimension of the data.
+
+    Args:
+        X: Array-like or sequence.
+
+    Returns:
+        (n_rows, n_columns).
+    """
+    shape = getattr(X, "shape", None)
+    if shape is not None:
+        if len(shape) >= 2:
+            return int(shape[0]), int(shape[1])
+        return (int(shape[0]), 1) if len(shape) == 1 else (0, 0)
+
+    try:
+        n_rows = len(X)
+    except Exception:  # noqa: BLE001
+        return 0, 0
+
+    if n_rows == 0:
+        return 0, 0
+
+    try:
+        first = X[0]  # type: ignore[index]
+        n_cols = len(first) if hasattr(first, "__len__") else 1
+    except Exception:  # noqa: BLE001
+        n_cols = 1
+
+    return n_rows, n_cols
+
+
 def get_example_dataset(
     dataset_name: typing.Literal["iris", "breast_cancer", "digits", "diabetes"],
 ) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
@@ -91,7 +123,10 @@ def get_example_dataset(
         x_train, y_train, test_size=0.33, random_state=42
     )
 
-    return typing.cast(typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series], (x_train, x_test, y_train, y_test))
+    return typing.cast(
+        typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series],
+        (x_train, x_test, y_train, y_test),
+    )
 
 
 def get_dataset_with_specific_size(

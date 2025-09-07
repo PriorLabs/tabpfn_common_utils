@@ -2,10 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2024-12-19
+
+### Added
+- **Interactive Telemetry Module**: New `telemetry.interactive` package with optional dependencies
+- **Runtime Detection**: Automatic detection of IPython, Jupyter, and TTY environments
+- **User Prompts**: Interactive consent prompts for telemetry opt-in
+- **State Management**: File-based state storage for user preferences
+- **Model Tracking**: Decorators for automatic model call tracking
+- **Optional Dependencies**: Install with `pip install tabpfn_common_utils[telemetry-interactive]` for interactive features
+
+### Changed
+- **Package Structure**: Refactored telemetry into `core/` and `interactive/` modules
+- **API Separation**: Core telemetry always available, interactive features behind `[telemetry-interactive]` extra
+- **Import Strategy**: Graceful fallback when interactive dependencies are not installed
+
 ## [0.1.4] - 2024-12-19
 
 ### Changed
-- **Pandas Compatibility**: Updated pandas requirement to match tabpfn requirements for better ecosystem compatibility
+- **Dependency Compatibility**: Updated numpy and pandas requirements to be compatible with scipy 1.11.1 and tabpfn ecosystem
+- **NumPy Version**: Downgraded numpy requirement from `>=2,<3` to `>=1.21.6,<1.28.0` for scipy compatibility
+- **Pandas Version**: Updated pandas requirement to `>=1.4.0,<3` for broader compatibility
 
 ## [0.1.2] - 2024-12-19
 
