@@ -1,9 +1,10 @@
+import os
 import sys
 import uuid
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 
 def _uuid4() -> str:
@@ -54,6 +55,16 @@ def _get_sdk_version() -> str:
         return "unknown"  # tabpfn is not installed
 
 
+def _get_tabpfn_extension() -> Optional[str]:
+    """
+    Get the name of the TabPFN extension making the call.
+
+    Returns:
+        str: Name of the TabPFN extension if it's installed.
+    """
+    return os.getenv("TABPFN_EXTENSION_NAME")
+
+
 @dataclass
 class BaseTelemetryEvent:
     """
@@ -69,13 +80,16 @@ class BaseTelemetryEvent:
     # Timestamp of the event
     timestamp: datetime = field(default_factory=_utc_now, init=False)
 
+    # Name of the TabPFN extension making the call
+    extension: Optional[str] = field(default_factory=_get_tabpfn_extension, init=False)
+
     @property
     def name(self) -> str:
         raise NotImplementedError
 
     @property
     def source(self) -> str:
-        return "sdk"
+        return os.environ.get("TABPFN_TELEMETRY_SOURCE", "sdk")
 
     @property
     def properties(self) -> dict[str, Any]:

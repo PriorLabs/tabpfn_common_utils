@@ -68,6 +68,44 @@ def singleton(cls):
     return wrapper
 
 
+def shape_of(X: Any) -> tuple[int, int]:
+    """Get the input dimension of the data.
+
+    Supports numpy, pandas, torch, sklearn array-likes, and generic sequences.
+    """
+    # Objects with .shape (numpy, pandas, torch, scipy, etc.)
+    try:
+        shape = X.shape
+        # Scalar types
+        if len(shape) == 0:
+            return 1, 1
+
+        # 1D arrays
+        if len(shape) == 1:  # 1D array
+            return shape[0], 1
+
+        # Default to 2D array
+        return shape[0], shape[1]
+    except AttributeError:
+        pass
+    except Exception:
+        return 0, 0
+
+    # Generic sequences like lists, tuples, etc.
+    try:
+        n_rows = len(X)
+        if n_rows == 0:
+            return 0, 0
+
+        first = X[0]
+        if hasattr(first, "__len__"):
+            return n_rows, len(first)
+
+        return n_rows, 1
+    except Exception:
+        return 0, 0
+
+
 def get_example_dataset(
     dataset_name: typing.Literal["iris", "breast_cancer", "digits", "diabetes"],
 ) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
@@ -91,7 +129,10 @@ def get_example_dataset(
         x_train, y_train, test_size=0.33, random_state=42
     )
 
-    return typing.cast(typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series], (x_train, x_test, y_train, y_test))
+    return typing.cast(
+        typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series],
+        (x_train, x_test, y_train, y_test),
+    )
 
 
 def get_dataset_with_specific_size(
