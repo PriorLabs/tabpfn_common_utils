@@ -46,7 +46,7 @@ def _prompt_identity(
     def _parse(raw: str) -> tuple[Optional[Outcome], Optional[Dict[str, Any]]]:
         """Parse the user input."""
         val = raw.lower().strip()
-        
+
         # Only accept explicit "y" or "n"
         if val in {"y", "yes"}:
             return "accepted", {"telemetry": True}
@@ -60,7 +60,7 @@ def _prompt_identity(
         input_prompt="Enable anonymous usage analytics? [y/n]: ",
         on_retry_message="Invalid input. Please enter `y` or `n`.",
         parser=_parse,
-        max_retries=3
+        max_retries=3,
     )
     return func
 

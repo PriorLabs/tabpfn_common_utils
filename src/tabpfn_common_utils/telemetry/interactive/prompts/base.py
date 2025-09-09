@@ -76,7 +76,7 @@ def parse_input(
         A PromptResult object.
     """
     retries = 0
-    
+
     while retries <= max_retries:
         try:
             raw = input(input_prompt).strip()
@@ -84,7 +84,7 @@ def parse_input(
             return PromptResult("dismissed", {})
 
         outcome, data = parser(raw)
-        
+
         # If outcome is None, input was invalid - retry
         if outcome is None:
             retries += 1
@@ -94,8 +94,8 @@ def parse_input(
             else:
                 # Max retries exceeded, treat as dismissed
                 return PromptResult("dismissed", {})
-        
+
         # Valid outcome, return result
         return PromptResult(outcome, data or {})
-    
+
     return PromptResult("dismissed", {})
