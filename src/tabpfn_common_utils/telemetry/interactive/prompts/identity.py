@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 # Prompt template for allowing anonymous usage analytics to be linked to a pseudonymous ID
 _BODY = textwrap.dedent("""\
-  Help improve TabPFN by sharing anonymous usage analytics? [Y/n]
+  Help improve TabPFN by sharing anonymous usage analytics? [y/n]
 
   If enabled:
   • We collect usage data linked only to a random pseudonymous ID
@@ -29,7 +29,7 @@ def _prompt_identity(
     *,
     title: str = "📈 Share anonymous usage analytics? (Optional)",
     body: str = _BODY,
-    hint: str = "Enter Y to accept, press Enter or type 'n' to decline.",
+    hint: str = "Enter `y` to accept, press Enter or type 'n' to decline.",
 ) -> PromptResult:
     """Blocking IPython prompt for anonymous telemetry consent.
 
