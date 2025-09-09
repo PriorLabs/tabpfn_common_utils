@@ -29,7 +29,7 @@ def _prompt_identity(
     *,
     title: str = "📈 Share anonymous usage analytics? (Optional)",
     body: str = _BODY,
-    hint: str = "Press Enter for Yes, or type 'n' to decline.",
+    hint: str = "Enter Y to accept, press Enter or type 'n' to decline.",
 ) -> PromptResult:
     """Blocking IPython prompt for anonymous telemetry consent.
 
@@ -52,7 +52,7 @@ def _prompt_identity(
         return "declined", {"telemetry": False}
 
     func = parse_input(
-        input_prompt="Enable anonymous usage analytics? [Y/n]: ",
+        input_prompt="Enable anonymous usage analytics? [y/n]: ",
         parser=_parse,
     )
     return func
