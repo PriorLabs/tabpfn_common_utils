@@ -91,7 +91,7 @@ def _subscribe_user(email: str) -> None:
         email: The email of the user to opt_in.
     """
     endpoint = _API_URL + "/newsletter/subscribe"
-    r = requests.post(endpoint, json={"email": email}, timeout=5)
+    r = requests.post(endpoint, json={"email": email.lower()}, timeout=5)
     if r.status_code != 200:
         _logger.debug(f"Failed to subscribe user {email}: {r.text}")
         return

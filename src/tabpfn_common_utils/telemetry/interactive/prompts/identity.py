@@ -29,7 +29,7 @@ def _prompt_identity(
     *,
     title: str = "📈 Share anonymous usage analytics? (Optional)",
     body: str = _BODY,
-    hint: str = "Enter `y` to accept, press Enter or type 'n' to decline.",
+    hint: str = "Enter `y` to accept or `n` to decline.",
 ) -> PromptResult:
     """Blocking IPython prompt for anonymous telemetry consent.
 
@@ -43,17 +43,24 @@ def _prompt_identity(
     """
     render_html(title, body, hint)
 
-    def _parse(raw: str) -> tuple[Outcome, Optional[Dict[str, Any]]]:
+    def _parse(raw: str) -> tuple[Optional[Outcome], Optional[Dict[str, Any]]]:
         """Parse the user input."""
-        val = raw.lower()
+        val = raw.lower().strip()
+        
+        # Only accept explicit "y" or "n"
         if val in {"y", "yes"}:
             return "accepted", {"telemetry": True}
-
-        return "declined", {"telemetry": False}
+        elif val in {"n", "no"}:
+            return "declined", {"telemetry": False}
+        else:
+            # Invalid input and return None to trigger retry
+            return None, None
 
     func = parse_input(
         input_prompt="Enable anonymous usage analytics? [y/n]: ",
+        on_retry_message="Invalid input. Please enter `y` or `n`.",
         parser=_parse,
+        max_retries=3
     )
     return func
 
@@ -92,7 +99,7 @@ class IdentityPrompt:
             The prompt specification.
         """
         prompt = PromptSpec(
-            kind="newsletter",
+            kind="identity",
             trigger=_should_prompt,
             ask=_prompt_identity,
             on_done=_on_done,
