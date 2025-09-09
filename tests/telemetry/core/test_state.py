@@ -12,7 +12,7 @@ from tabpfn_common_utils.telemetry.core.state import (
     APP,
     FILENAME,
     VENDOR,
-    _atomic_write,
+    _write_with_lock,
     _cleanup_temp_file,
     _ensure_dir,
     _read,
@@ -27,7 +27,7 @@ from tabpfn_common_utils.telemetry.core.state import (
 
 class TestStateConstants:
     def test_app_constant(self):
-        assert APP == "tabpfn"
+        assert APP == ".tabpfn"
 
     def test_vendor_constant(self):
         assert VENDOR == "priorlabs"
@@ -41,9 +41,9 @@ class TestStateConstants:
     def test_default_state_schema(self):
         assert isinstance(_DEFAULT_STATE, dict)
         assert "created_at" in _DEFAULT_STATE
-        assert "opted_in" in _DEFAULT_STATE
+        assert "user_id" in _DEFAULT_STATE
         assert "email" in _DEFAULT_STATE
-        assert "email_prompt_count" in _DEFAULT_STATE
+        assert "nr_prompts" in _DEFAULT_STATE
         assert "last_prompted_at" in _DEFAULT_STATE
 
 
@@ -228,13 +228,13 @@ class TestRead:
 
 
 class TestAtomicWrite:
-    def test_atomic_write_success(self):
+    def test_write_with_lock_success(self):
         test_data = {"user_id": "test-123", "created_at": "2024-01-01"}
 
         with tempfile.TemporaryDirectory() as temp_dir:
             config_path = Path(temp_dir) / "config.json"
 
-            _atomic_write(config_path, test_data)
+            _write_with_lock(config_path, test_data)
 
             # File should exist and contain correct data
             assert config_path.exists()
@@ -242,7 +242,7 @@ class TestAtomicWrite:
                 result = json.load(f)
             assert result == test_data
 
-    def test_atomic_write_creates_directory(self):
+    def test_write_with_lock_creates_directory(self):
         test_data = {"key": "value"}
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -251,29 +251,29 @@ class TestAtomicWrite:
             # Parent directory should not exist
             assert not config_path.parent.exists()
 
-            _atomic_write(config_path, test_data)
+            _write_with_lock(config_path, test_data)
 
             # Parent directory should be created
             assert config_path.parent.exists()
             assert config_path.exists()
 
-    def test_atomic_write_cleans_up_temp_file(self):
+    def test_write_with_lock_cleans_up_temp_file(self):
         test_data = {"key": "value"}
 
         with tempfile.TemporaryDirectory() as temp_dir:
             state_path = Path(temp_dir) / "state.json"
             module = "tabpfn_common_utils.telemetry.core.state"
             with patch(f"{module}._cleanup_temp_file") as mock_cleanup:
-                _atomic_write(state_path, test_data)
+                _write_with_lock(state_path, test_data)
                 mock_cleanup.assert_called_once()
 
-    def test_atomic_write_json_formatting(self):
+    def test_write_with_lock_json_formatting(self):
         test_data = {"key": "value", "number": 42}
 
         with tempfile.TemporaryDirectory() as temp_dir:
             state_path = Path(temp_dir) / "state.json"
 
-            _atomic_write(state_path, test_data)
+            _write_with_lock(state_path, test_data)
 
             # Read the file and check formatting
             with state_path.open("r") as f:
@@ -286,7 +286,7 @@ class TestAtomicWrite:
 
 class TestLoadState:
     def test_load_state_existing_file(self):
-        test_data = {"opted_in": True, "email": "test@example.com"}
+        test_data = {"user_id": True, "email": "test@example.com"}
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".json", delete=False
@@ -298,7 +298,7 @@ class TestLoadState:
             name = "tabpfn_common_utils.telemetry.core.state._state_path"
             with patch(name, return_value=temp_path):
                 result = load_state()
-                assert result["opted_in"] is True
+                assert result["user_id"] is True
                 assert result["email"] == "test@example.com"
                 assert "created_at" in result  # migrated
         finally:
@@ -311,12 +311,12 @@ class TestLoadState:
             with patch(name, return_value=non_existent_path):
                 result = load_state()
                 assert "created_at" in result
-                assert result["opted_in"] is None
+                assert result["user_id"] is None
 
 
 class TestSaveState:
     def test_save_state_success(self):
-        test_data = {"opted_in": True, "email": "test@example.com"}
+        test_data = {"user_id": True, "email": "test@example.com"}
 
         with tempfile.TemporaryDirectory() as temp_dir:
             state_path = Path(temp_dir) / "state.json"
@@ -328,13 +328,13 @@ class TestSaveState:
                 assert state_path.exists()
                 with state_path.open("r") as f:
                     result = json.load(f)
-                assert result["opted_in"] is True
+                assert result["user_id"] is True
                 assert result["email"] == "test@example.com"
                 assert "created_at" in result  # migrated
 
     def test_save_state_handles_complex_data(self):
         test_data = {
-            "opted_in": True,
+            "user_id": True,
             "email": "test@example.com",
             "email_prompt_count": 2,
             "last_prompted_at": "2024-01-01T00:00:00Z",
@@ -352,7 +352,7 @@ class TestSaveState:
                 assert state_path.exists()
                 with state_path.open("r", encoding="utf-8") as f:
                     result = json.load(f)
-                assert result["opted_in"] is True
+                assert result["user_id"] is True
                 assert result["email"] == "test@example.com"
                 assert result["custom"]["key"] == "value"
                 assert result["unicode"] == "测试数据"
@@ -361,7 +361,7 @@ class TestSaveState:
 class TestStateIntegration:
     def test_save_and_load_state_roundtrip(self):
         original_data = {
-            "opted_in": True,
+            "user_id": True,
             "email": "test@example.com",
             "email_prompt_count": 1,
             "last_prompted_at": "2024-01-01T00:00:00Z",
@@ -379,7 +379,7 @@ class TestStateIntegration:
                 loaded_data = load_state()
 
                 # Should have all original data plus migrated fields
-                assert loaded_data["opted_in"] is True
+                assert loaded_data["user_id"] is True
                 assert loaded_data["email"] == "test@example.com"
                 assert loaded_data["email_prompt_count"] == 1
                 assert loaded_data["last_prompted_at"] == "2024-01-01T00:00:00Z"
@@ -392,11 +392,11 @@ class TestStateIntegration:
             name = "tabpfn_common_utils.telemetry.core.state._state_path"
             with patch(name, return_value=state_path):
                 # Initial save
-                save_state({"opted_in": False, "email_prompt_count": 0})
+                save_state({"user_id": False, "email_prompt_count": 0})
 
                 # Update with additional data
                 state = {
-                    "opted_in": True,
+                    "user_id": True,
                     "email": "test@example.com",
                     "email_prompt_count": 1,
                 }
@@ -404,7 +404,7 @@ class TestStateIntegration:
 
                 # Load and verify
                 loaded_data = load_state()
-                assert loaded_data["opted_in"] is True
+                assert loaded_data["user_id"] is True
                 assert loaded_data["email"] == "test@example.com"
                 assert loaded_data["email_prompt_count"] == 1
 
@@ -419,7 +419,7 @@ class TestStateIntegration:
 
     def test_state_handles_unicode_data(self):
         unicode_data = {
-            "opted_in": True,
+            "user_id": True,
             "email": "测试@example.com",
             "description": "这是一个测试状态",
             "emoji": "🚀",
@@ -447,10 +447,10 @@ class TestPropertyAccess:
             name = "tabpfn_common_utils.telemetry.core.state._state_path"
             with patch(name, return_value=state_path):
                 # Set up initial state
-                save_state({"opted_in": True, "email": "test@example.com"})
+                save_state({"user_id": True, "email": "test@example.com"})
 
                 # Test getting existing properties
-                assert get_property("opted_in") is True
+                assert get_property("user_id") is True
                 assert get_property("email") == "test@example.com"
 
     def test_set_property(self):
@@ -460,12 +460,12 @@ class TestPropertyAccess:
             name = "tabpfn_common_utils.telemetry.core.state._state_path"
             with patch(name, return_value=state_path):
                 # Set properties
-                set_property("opted_in", value=True)
+                set_property("user_id", value=True)
                 set_property("email", "test@example.com")
                 set_property("email_prompt_count", 2)
 
                 # Verify they were set
                 loaded_data = load_state()
-                assert loaded_data["opted_in"] is True
+                assert loaded_data["user_id"] is True
                 assert loaded_data["email"] == "test@example.com"
                 assert loaded_data["email_prompt_count"] == 2

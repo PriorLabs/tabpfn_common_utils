@@ -23,19 +23,24 @@ except ImportError:
     pass
 
 # Application name and vendor
-APP = "tabpfn"
+APP = ".tabpfn"
 VENDOR = "priorlabs"
 FILENAME = "state.json"
 
 # Schema
 _DEFAULT_STATE: dict[str, Any] = {
-    "created_at": None,  # ISO-8601 | null
-    "opted_in": None,  # true | false | null
-    "user_id": None,  # string | null
-    "email": None,  # string | null
-    "email_prompt_count": 0,  # 0..2
-    "last_prompted_at": None,  # ISO-8601 | null
-    "last_pinged_at": None,  # ISO-8601 | null
+    # Date and time when state file was created
+    "created_at": None,
+    # Anonymous user ID, only with consent
+    "user_id": None,
+    # Email address, only with consent
+    "email": None,
+    # Number of times prompts were shown
+    "nr_prompts": 0,
+    # Date and time when last prompt was shown
+    "last_prompted_at": None,
+    # Date and time when last anonymous ping was sent
+    "last_pinged_at": None,
 }
 
 
@@ -66,8 +71,47 @@ def _ensure_dir(path: Path) -> None:
         path.parent.chmod(0o700)
 
 
-def _atomic_write(path: Path, data: dict[str, Any]) -> None:
-    """Atomic write to the state file.
+def _write_with_lock(path: Path, data: dict[str, Any]) -> None:
+    """Write data to file with filelock if available.
+
+    Args:
+        path: The path to the state file.
+        data: The data to write to the state file.
+    """
+    if _HAS_FILELOCK:
+        _write_with_filelock(path, data)
+    else:
+        _write_without_lock(path, data)
+
+
+def _write_with_filelock(path: Path, data: dict[str, Any]) -> None:
+    """Write data to file using filelock for thread safety.
+
+    Args:
+        path: The path to the state file.
+        data: The data to write to the state file.
+    """
+    import filelock  # type: ignore[import-untyped]
+
+    lock_path = path.with_suffix(".lock")
+    lock = filelock.FileLock(lock_path, timeout=10)
+
+    with lock:
+        _write_data_to_file(path, data)
+
+
+def _write_without_lock(path: Path, data: dict[str, Any]) -> None:
+    """Write data to file without filelock (fallback).
+
+    Args:
+        path: The path to the state file.
+        data: The data to write to the state file.
+    """
+    _write_data_to_file(path, data)
+
+
+def _write_data_to_file(path: Path, data: dict[str, Any]) -> None:
+    """Write data to file atomically.
 
     Args:
         path: The path to the state file.
@@ -79,27 +123,41 @@ def _atomic_write(path: Path, data: dict[str, Any]) -> None:
     # Create a temporary file
     fd, tmp = tempfile.mkstemp(prefix=".tmp_", dir=str(path.parent))
 
-    # Write the data to the temporary file
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
-            params = {
-                "ensure_ascii": False,
-                "separators": (",", ":"),
-                "default": _json_serialize,
-            }
-            json.dump(data, f, **params)
+            _write_json_to_file(f, data)
+            _sync_file_to_disk(f)
 
-            # Flush the file to disk
-            f.flush()
-            # Sync the file to disk
-            os.fsync(f.fileno())
-
+        # Atomic replace
         Path(tmp).replace(path)
-
-        # Set file permissions
         _set_file_permissions(path)
     finally:
         _cleanup_temp_file(tmp)
+
+
+def _write_json_to_file(file, data: dict[str, Any]) -> None:
+    """Write JSON data to file.
+
+    Args:
+        file: The file object to write to.
+        data: The data to write.
+    """
+    params = {
+        "ensure_ascii": False,
+        "separators": (",", ":"),
+        "default": _json_serialize,
+    }
+    json.dump(data, file, **params)
+
+
+def _sync_file_to_disk(file) -> None:
+    """Sync file to disk.
+
+    Args:
+        file: The file object to sync.
+    """
+    file.flush()
+    os.fsync(file.fileno())
 
 
 def _json_serialize(obj: Any) -> Any:
@@ -194,7 +252,7 @@ def save_state(state: dict[str, Any]) -> None:
         normalized["created_at"] = datetime.now(timezone.utc).isoformat()
 
     path = _state_path()
-    _atomic_write(path, normalized)
+    _write_with_lock(path, normalized)
 
 
 def get_property(key: str, default: Any = None, data_type: type | None = None) -> Any:

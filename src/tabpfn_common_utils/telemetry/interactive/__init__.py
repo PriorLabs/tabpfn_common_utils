@@ -5,10 +5,10 @@ from __future__ import annotations
 
 try:
     # Import the specific functions to expose
-    from .flows import ping, subscribe
+    from .flows import ping, opt_in
     from .runtime import get_runtime
 
-    __all__ = ["ping", "subscribe", "get_runtime"]
+    __all__ = ["ping", "opt_in", "get_runtime"]
 
 except ImportError:
 

@@ -2,39 +2,23 @@
 
 from __future__ import annotations
 
-import logging
-import os
-import uuid
 from datetime import datetime, timedelta, timezone
 
-import requests
-from ...telemetry import PingEvent, ProductTelemetry, capture_event
-
-from .prompt import (
-    get_default_prompt,
-    prompt_email_ipython,
-    prompt_email_tty,
-)
-from .runtime import get_runtime
+from typing import List
 from ..core.state import get_property, set_property
-
-# Logger
-logger = logging.getLogger(__name__)
-
-# Silence third-party logs
-logging.getLogger("posthog").setLevel(logging.CRITICAL + 1)
-
-# Initialize the telemetry client for optional usage analytics
-_telemetry = ProductTelemetry()
-
-# Constants
-_API_URL = os.environ.get(
-    "TABPFN_API_URL", "https://tabpfn-server-wjedmz7r5a-ez.a.run.app"
-)
+from ..core import PingEvent, capture_event
+from .prompts.base import PromptSpec
+from .prompts.newsletter import NewsletterPrompt
+from .prompts.identity import IdentityPrompt
+from .runtime import get_runtime
 
 
 def ping(enabled: bool = True) -> None:
-    """Ping the usage service to track usage and analytics."""
+    """Ping the usage service to track usage and analytics.
+
+    Args:
+        enabled: Whether to ping the usage service.
+    """
     # Skip if disabled
     if not enabled:
         return
@@ -54,75 +38,79 @@ def ping(enabled: bool = True) -> None:
     set_property("last_pinged_at", utc_now)
 
 
-def subscribe(enabled: bool = True, delta_days: int = 30, max_prompts: int = 2) -> None:
-    """Prompt the user to subscribe to newsletter about releases, critical bux
-    fixes and major research insights from the Prior Labs team.
+def _trigger_prompts(delta_days: int, max_prompts: int) -> bool:
+    """Determine if prompts should be shown.
+
+    Args:
+        now: The current time.
+        delta_days: The number of days to wait between prompts.
+        max_prompts: The maximum number of prompts to show.
+
+    Returns:
+        True if a prompt should be shown, False otherwise.
     """
-    # Skip if disabled
-    if not enabled:
-        return
-
-    # tabpfn not run in interactive mode
-    runtime = get_runtime()
-    if not runtime.interactive:
-        return
-
-    # Check if user already subscribed
-    email = get_property("email", default=None)
-    if email:
-        return
-
-    # Determine whether to prompt the user or not
     utc_now = datetime.now(timezone.utc)
 
     last_prompted_at = get_property("last_prompted_at", data_type=datetime)
-    if last_prompted_at:
-        # Ignore if last prompted less than 30 days ago
-        if utc_now - last_prompted_at < timedelta(days=delta_days):
-            return
+    if not last_prompted_at:
+        return True
 
-        # Ignore if prompted for more than 2 times
-        prompt_count = get_property("email_prompt_count", 0, data_type=int)
-        if prompt_count >= max_prompts:
-            return
+    # Check if the maximum number of prompts has been reached
+    nr_prompts = get_property("nr_prompts", 0, data_type=int)
+    if nr_prompts >= max_prompts:
+        return False
 
-    # Prompt the user
-    title, body, hint = get_default_prompt()
+    # Check if the time since the last prompt is greater than the delta days
+    if utc_now - last_prompted_at >= timedelta(days=delta_days):
+        return True
 
-    if runtime.kernel in {"ipython", "jupyter"}:
-        result = prompt_email_ipython(title, body, hint)
-    else:
-        result = prompt_email_tty(title, body, hint)
-
-    # Acknowledge the prompt
-    set_property("last_prompted_at", utc_now)
-
-    # Subscribe the user to newsletter
-    if result.outcome != "accepted":
-        return
-
-    # Subscribe via API
-    if result.email:
-        _subscribe_user(result.email)
-
-    # Generate a user ID when opted in
-    user_id = str(uuid.uuid4())
-
-    # Update the on-disk properties
-    set_property("user_id", user_id)
-    set_property("email", result.email)
-
-    return
+    return False
 
 
-def _subscribe_user(email: str) -> None:
-    """Subscribe the user to newsletter using the API.
+def _build_prompts() -> List[PromptSpec]:
+    """Build the prompts that will be run in sequence.
+
+    Returns:
+        The prompts that will be run in sequence.
+    """
+    classes = [NewsletterPrompt, IdentityPrompt]
+    return [cls.build() for cls in classes]
+
+
+def opt_in(enabled: bool = True, delta_days: int = 30, max_prompts: int = 2) -> None:
+    """Run the opt-in flows in sequence (blocking, data-driven).
 
     Args:
-        email: The email of the user to subscribe.
+        enabled: Whether to run the opt-in flows.
+        delta_days: Minimum days between prompts per kind.
+        max_prompts: Max number of times to show each prompt.
     """
-    endpoint = _API_URL + "/newsletter/subscribe"
-    r = requests.post(endpoint, json={"email": email}, timeout=5)
-    if r.status_code != 200:
-        logger.debug(f"Failed to subscribe user {email}: {r.text}")
+    if not enabled:
         return
+
+    # Only show prompts in Jupyter/IPython
+    runtime = get_runtime()
+    if runtime.kernel not in {"jupyter", "ipython"}:
+        return
+
+    # Check if prompts should be shown
+    if not _trigger_prompts(delta_days, max_prompts):
+        return
+
+    # Build the required prompts
+    prompts = _build_prompts()
+
+    # Run each needed prompt in order
+    for spec in prompts:
+        # Skip if value already present
+        if not spec.trigger():
+            continue
+
+        # Ask (blocking, Jupyter/IPython-safe) and handle result
+        result = spec.ask()
+        spec.on_done(result)
+
+    # Acknowledge the prompt
+    set_property("last_prompted_at", datetime.now(timezone.utc))
+    nr_prompts = get_property("nr_prompts", 0, data_type=int)
+    set_property("nr_prompts", nr_prompts + 1)
