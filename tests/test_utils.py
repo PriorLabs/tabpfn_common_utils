@@ -126,15 +126,15 @@ class TestShapeOf(unittest.TestCase):
         # These should be treated as having 1 column, not 0 columns
         arr_1d = np.array([1, 2, 3, 4, 5])  # shape (5,)
         self.assertEqual(shape_of(arr_1d), (5, 1))
-        
+
         # Test with larger 1D array
         arr_large_1d = np.array(range(100))  # shape (100,)
         self.assertEqual(shape_of(arr_large_1d), (100, 1))
-        
+
         # Test pandas Series (which should also be treated as 1 column)
         series = pd.Series([1, 2, 3, 4, 5])
         self.assertEqual(shape_of(series), (5, 1))
-        
+
         # Test 1D list
         lst_1d = [1, 2, 3, 4, 5]
         self.assertEqual(shape_of(lst_1d), (5, 1))

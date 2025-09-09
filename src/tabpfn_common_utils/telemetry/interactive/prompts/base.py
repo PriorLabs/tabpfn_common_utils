@@ -1,7 +1,7 @@
 import html
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Literal
+from typing import Any, Callable, Dict, Literal, Optional
 
 # Outcome of a prompt
 Outcome = Literal["accepted", "declined", "dismissed", "timeout"]
@@ -61,7 +61,7 @@ def render_html(title: str, body: str, hint: str) -> None:
 
 def parse_input(
     input_prompt: str,
-    parser: Callable[[str], tuple[Outcome, Dict[str, Any] | None]],
+    parser: Callable[[str], tuple[Outcome, Optional[Dict[str, Any]]]],
 ) -> PromptResult:
     """Blocking input loop with unified parsing.
 

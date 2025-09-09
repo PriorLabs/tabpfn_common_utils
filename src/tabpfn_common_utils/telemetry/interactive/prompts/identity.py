@@ -2,7 +2,7 @@ import logging
 import uuid
 import textwrap
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from .base import render_html, PromptResult, Outcome, parse_input, PromptSpec
 from ...core.state import get_property, set_property
 
@@ -43,7 +43,7 @@ def _prompt_identity(
     """
     render_html(title, body, hint)
 
-    def _parse(raw: str) -> tuple[Outcome, Dict[str, Any] | None]:
+    def _parse(raw: str) -> tuple[Outcome, Optional[Dict[str, Any]]]:
         """Parse the user input."""
         val = raw.lower()
         if val in {"", "y", "yes"}:
