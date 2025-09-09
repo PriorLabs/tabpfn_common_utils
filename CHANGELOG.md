@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2024-12-19
+
+### Enhanced
+- **Interactive Prompts**: Improved user input validation for telemetry consent prompts
+- **Input Validation**: Now requires explicit "y" or "n" input instead of accepting empty strings
+- **Retry Logic**: Added retry mechanism with up to 3 attempts for invalid input
+- **User Experience**: More specific error messages and clearer input requirements
+
+### Changed
+- **Prompt Behavior**: Identity prompt now enforces explicit user choice rather than defaulting on empty input
+- **Error Handling**: Enhanced input parsing with customizable retry messages
+- **Type Safety**: Updated type annotations to support optional outcomes for invalid input
+
 ## [0.1.6] - 2024-12-19
 
 ### Added
