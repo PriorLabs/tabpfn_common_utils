@@ -46,7 +46,7 @@ def _prompt_identity(
     def _parse(raw: str) -> tuple[Outcome, Optional[Dict[str, Any]]]:
         """Parse the user input."""
         val = raw.lower()
-        if val in {"", "y", "yes"}:
+        if val in {"y", "yes"}:
             return "accepted", {"telemetry": True}
 
         return "declined", {"telemetry": False}
