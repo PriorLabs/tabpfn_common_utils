@@ -35,7 +35,7 @@ class PromptResult:
 class PromptSpec:
     """Specification of a prompt"""
 
-    kind: Literal["newsletter", "analytics"]
+    kind: Literal["newsletter", "identity"]
     trigger: Callable[[], bool]
     ask: Callable[[], PromptResult]
     on_done: Callable[[PromptResult], None]
@@ -61,25 +61,41 @@ def render_html(title: str, body: str, hint: str) -> None:
 
 def parse_input(
     input_prompt: str,
-    parser: Callable[[str], tuple[Outcome, Optional[Dict[str, Any]]]],
+    parser: Callable[[str], tuple[Optional[Outcome], Optional[Dict[str, Any]]]],
+    max_retries: int = 3,
+    on_retry_message: str = "Invalid input. Please try again.",
 ) -> PromptResult:
-    """Blocking input loop with unified parsing.
+    """Blocking input loop with unified parsing and retry logic.
 
     Args:
         input_prompt: The input() prompt string.
-        parser: A callable that receives the raw string.
+        parser: A callable that receives the raw string and parses outcome.
+        max_retries: Maximum number of retries for invalid input.
 
     Returns:
         A PromptResult object.
     """
-    # Run until the user provides a valid outcome
-    try:
-        raw = input(input_prompt).strip()
-    except KeyboardInterrupt:
-        return PromptResult("dismissed", {})
+    retries = 0
 
-    outcome, data = parser(raw)
-    if outcome is not None:
+    while retries <= max_retries:
+        try:
+            raw = input(input_prompt).strip()
+        except KeyboardInterrupt:
+            return PromptResult("dismissed", {})
+
+        outcome, data = parser(raw)
+
+        # If outcome is None, input was invalid - retry
+        if outcome is None:
+            retries += 1
+            if retries <= max_retries:
+                print(on_retry_message)
+                continue
+            else:
+                # Max retries exceeded, treat as dismissed
+                return PromptResult("dismissed", {})
+
+        # Valid outcome, return result
         return PromptResult(outcome, data or {})
 
     return PromptResult("dismissed", {})
