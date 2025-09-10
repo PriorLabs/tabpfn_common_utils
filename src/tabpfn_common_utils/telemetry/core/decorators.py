@@ -25,6 +25,7 @@ _current_ext = contextvars.ContextVar[Optional[str]](
     "tabpfn_current_extension", default=None
 )
 
+
 def get_current_extension() -> Optional[str]:
     """Get the current extension.
 
@@ -54,18 +55,20 @@ def set_extension(extension_name: str):
     Args:
         extension_name: The name of the extension to set.
     """
+
     def deco(fn):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             # Don't override outer context
             if _current_ext.get() is not None:
                 return fn(*args, **kwargs)
-            
+
             # Set the current extension
             with _extension_context(extension_name):
                 return fn(*args, **kwargs)
 
         return wrapper
+
     return deco
 
 
