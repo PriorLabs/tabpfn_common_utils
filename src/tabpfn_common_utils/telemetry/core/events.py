@@ -55,16 +55,6 @@ def _get_sdk_version() -> str:
         return "unknown"  # tabpfn is not installed
 
 
-def _get_tabpfn_extension() -> Optional[str]:
-    """
-    Get the name of the TabPFN extension making the call.
-
-    Returns:
-        str: Name of the TabPFN extension if it's installed.
-    """
-    return os.getenv("TABPFN_EXTENSION_NAME")
-
-
 @dataclass
 class BaseTelemetryEvent:
     """
@@ -81,7 +71,7 @@ class BaseTelemetryEvent:
     timestamp: datetime = field(default_factory=_utc_now, init=False)
 
     # Name of the TabPFN extension making the call
-    extension: Optional[str] = field(default_factory=_get_tabpfn_extension, init=False)
+    extension: Optional[str] = field(default=None, init=False)
 
     @property
     def name(self) -> str:

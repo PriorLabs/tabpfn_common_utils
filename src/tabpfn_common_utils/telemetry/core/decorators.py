@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import functools
 import inspect
 import logging
 import time
+
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, Optional
 
 from .events import FitEvent, PredictEvent
 from .service import capture_event
@@ -15,6 +18,56 @@ from tabpfn_common_utils.utils import shape_of
 
 # Logger
 logger = logging.getLogger(__name__)
+
+
+# Current extension
+_current_ext = contextvars.ContextVar[Optional[str]](
+    "tabpfn_current_extension", default=None
+)
+
+def get_current_extension() -> Optional[str]:
+    """Get the current extension.
+
+    Returns:
+        The name of the current extension.
+    """
+    return _current_ext.get()
+
+
+@contextlib.contextmanager
+def _extension_context(extension_name: str):
+    """Context manager to set the current extension.
+
+    Args:
+        extension_name: The name of the extension to set.
+    """
+    tok = _current_ext.set(extension_name)
+    try:
+        yield
+    finally:
+        _current_ext.reset(tok)
+
+
+def set_extension(extension_name: str):
+    """Decorator to set the current extension.
+
+    Args:
+        extension_name: The name of the extension to set.
+    """
+    def deco(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            # Don't override outer context
+            if _current_ext.get() is not None:
+                return fn(*args, **kwargs)
+            
+            # Set the current extension
+            with _extension_context(extension_name):
+                return fn(*args, **kwargs)
+
+        return wrapper
+    return deco
+
 
 # Type of model tasks
 ModelTaskType = Literal["classification", "regression"]
@@ -135,6 +188,8 @@ def _send_model_called_event(call_info: _ModelCallInfo, duration_ms: int) -> Non
     # Create event, might fail due to a type mismatch
     try:
         event = _event_cls(**event_kwargs)
+        # Set the extension name or None
+        event.extension = get_current_extension()
     except TypeError as e:
         logger.debug(f"Event creation failed: {e}")
         return
