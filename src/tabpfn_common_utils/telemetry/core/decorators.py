@@ -23,13 +23,20 @@ logger = logging.getLogger(__name__)
 # Current extension - use a global registry to ensure sharing across module instances
 _CONTEXT_VARS = {}
 
+
 def _get_context_var():
-    """Get the shared context variable, ensuring it's the same instance across all imports."""
-    if "tabpfn_current_extension" not in _CONTEXT_VARS:
-        _CONTEXT_VARS["tabpfn_current_extension"] = contextvars.ContextVar[Optional[str]](
-            "tabpfn_current_extension", default=None
+    """Get the shared context variable, ensuring it's the same 
+    instance across all imports.
+    
+    Returns:
+        The context variable.
+    """
+    var_name = "tabpfn_current_extension"
+    if var_name not in _CONTEXT_VARS:
+        _CONTEXT_VARS[var_name] = contextvars.ContextVar[Optional[str]](
+            var_name, default=None
         )
-    return _CONTEXT_VARS["tabpfn_current_extension"]
+    return _CONTEXT_VARS[var_name]
 
 
 def get_current_extension() -> Optional[str]:
