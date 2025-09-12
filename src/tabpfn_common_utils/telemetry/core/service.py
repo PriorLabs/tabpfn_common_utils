@@ -50,12 +50,10 @@ class ProductTelemetry:
         Returns:
             bool: True if telemetry is enabled, False otherwise.
         """
-        # Disable telemetry by default in CI environments
+        # Disable telemetry by default in CI environments, but allow override
         runtime = get_runtime()
-        if runtime.ci:
-            return False
-
-        return os.getenv("TABPFN_DISABLE_TELEMETRY", "0").lower() not in ("1", "true")
+        default_disable = "1" if runtime.ci else "0"
+        return os.getenv("TABPFN_DISABLE_TELEMETRY", default_disable).lower() not in ("1", "true")
 
     def capture(
         self,
