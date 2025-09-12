@@ -20,10 +20,16 @@ from tabpfn_common_utils.utils import shape_of
 logger = logging.getLogger(__name__)
 
 
-# Current extension
-_current_ext = contextvars.ContextVar[Optional[str]](
-    "tabpfn_current_extension", default=None
-)
+# Current extension - use a global registry to ensure sharing across module instances
+_CONTEXT_VARS = {}
+
+def _get_context_var():
+    """Get the shared context variable, ensuring it's the same instance across all imports."""
+    if "tabpfn_current_extension" not in _CONTEXT_VARS:
+        _CONTEXT_VARS["tabpfn_current_extension"] = contextvars.ContextVar[Optional[str]](
+            "tabpfn_current_extension", default=None
+        )
+    return _CONTEXT_VARS["tabpfn_current_extension"]
 
 
 def get_current_extension() -> Optional[str]:
@@ -32,7 +38,7 @@ def get_current_extension() -> Optional[str]:
     Returns:
         The name of the current extension.
     """
-    return _current_ext.get()
+    return _get_context_var().get()
 
 
 @contextlib.contextmanager
@@ -42,11 +48,12 @@ def _extension_context(extension_name: str):
     Args:
         extension_name: The name of the extension to set.
     """
-    tok = _current_ext.set(extension_name)
+    context_var = _get_context_var()
+    tok = context_var.set(extension_name)
     try:
         yield
     finally:
-        _current_ext.reset(tok)
+        context_var.reset(tok)
 
 
 def set_extension(extension_name: str):
@@ -60,11 +67,14 @@ def set_extension(extension_name: str):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             # Don't override outer context
-            if _current_ext.get() is not None:
+            context_var = _get_context_var()
+            if context_var.get() is not None:
+                logger.error(f"Skipping {extension_name} because it's already set")
                 return fn(*args, **kwargs)
 
             # Set the current extension
             with _extension_context(extension_name):
+                logger.error(f"Setting {extension_name} extension name")
                 return fn(*args, **kwargs)
 
         return wrapper
@@ -106,6 +116,7 @@ def track_model_call(model_method: ModelMethodType, param_names: list[str]) -> C
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            logger.error(f"Calling {func.__name__} with args: {args} and kwargs: {kwargs}")
             return _safe_call_with_telemetry(
                 func, args, kwargs, model_method, param_names
             )
@@ -199,6 +210,7 @@ def _send_model_called_event(call_info: _ModelCallInfo, duration_ms: int) -> Non
 
     # Send event, catch all backend exceptions
     try:
+        logger.error(f"Capturing event: {event.properties} {get_current_extension()}")
         capture_event(event)
     except Exception as e:  # noqa: BLE001
         logger.debug(f"Event capture failed: {e}")
