@@ -10,6 +10,7 @@ import logging
 import time
 
 from dataclasses import dataclass
+from functools import wraps
 from typing import Any, Callable, Literal, Optional
 
 from .events import FitEvent, PredictEvent
@@ -19,8 +20,7 @@ from tabpfn_common_utils.utils import shape_of
 # Logger
 logger = logging.getLogger(__name__)
 
-
-# Current extension - use a global registry to ensure sharing across module instances
+# Current extension
 _CONTEXT_VARS = {}
 
 
@@ -63,28 +63,143 @@ def _extension_context(extension_name: str):
         context_var.reset(tok)
 
 
-def set_extension(extension_name: str):
+# Marker attribute for wrapped functions
+_MARKER_ATTR = "_tabpfn_extension_name"
+
+
+def _already_wrapped(fn, extension_name: str) -> bool:
+    """Check whether a callable is already wrapped for the given extension.
+
+    Args:
+        fn: The callable to check.
+        extension_name: The extension name.
+
+    Returns:
+        True if the callable already carries the marker.
+    """
+    f = fn
+    while True:
+        if getattr(f, _MARKER_ATTR, None) == extension_name:
+            return True
+
+        inner = getattr(f, "__wrapped__", None)
+        if inner is None:
+            return False
+        
+        f = inner
+
+
+def _is_public(name: str) -> bool:
+    """Check whether an attribute name is public.
+
+    Args:
+        name: The attribute name.
+
+    Returns:
+        True if the name does not start with an underscore.
+    """
+    return not name.startswith("_")
+
+
+def _is_sync_callable(fn) -> bool:
+    """Check whether a callable is synchronous (not async/generator-async).
+
+    Args:
+        fn: The callable to check.
+
+    Returns:
+        True if the callable is synchronous.
+    """
+    if inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn):
+        return False
+    return True
+    
+
+def _wrap_callable_with_extension(fn, extension_name: str):
+    """Wrap a synchronous callable so it runs under the extension context.
+
+    Skips wrapping if the callable is async or already wrapped for this extension.
+
+    Args:
+        fn: The callable to wrap.
+        extension_name: The extension name to set during the call.
+
+    Returns:
+        The wrapped callable, or the original if no wrapping was needed.
+    """
+    if not _is_sync_callable(fn) or _already_wrapped(fn, extension_name):
+        return fn
+
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        # Don't override an outer context
+        if _get_context_var().get() is not None:
+            return fn(*args, **kwargs)
+        with _extension_context(extension_name):
+            return fn(*args, **kwargs)
+
+    setattr(wrapped, _MARKER_ATTR, extension_name)
+    return wrapped
+
+
+def _wrap_class(cls, extension_name: str, public_only: bool = True):
+    """Wrap selected methods on a class so they run under the extension context.
+
+    Args:
+        cls: The class to modify in place.
+        extension_name: The extension name to set during wrapped method calls.
+        public_only: Whether to wrap only public methods.
+
+    Returns:
+        The modified class.
+    """
+    # Determine descriptors to skip
+    try:
+        from functools import cached_property
+        _skip_descriptors = (property, cached_property)
+    except Exception:
+        _skip_descriptors = (property,)
+
+    for name, attr in list(cls.__dict__.items()):
+
+        # Skip non-public methods
+        if public_only and not _is_public(name):
+            continue
+        
+        # Skip descriptors
+        if isinstance(attr, _skip_descriptors):
+            continue
+
+        # Wrap static/class methods
+        if isinstance(attr, (staticmethod, classmethod)):
+            fn = attr.__func__
+            wrapped_fn = _wrap_callable_with_extension(fn, extension_name)
+            if wrapped_fn is not fn:
+                setattr(cls, name, type(attr)(wrapped_fn))
+        
+        # Wrap regular functions
+        elif inspect.isfunction(attr):
+            wrapped_fn = _wrap_callable_with_extension(attr, extension_name)
+            if wrapped_fn is not attr:
+                setattr(cls, name, wrapped_fn)
+
+    return cls
+
+
+def set_extension(extension_name: str, public_only: bool = True):
     """Decorator to set the current extension.
 
     Args:
         extension_name: The name of the extension to set.
+        public_only: Whether to wrap only public methods when decorating a class.
+
+    Returns:
+        A decorator that can be used on functions or classes.
     """
-
-    def deco(fn):
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            # Don't override outer context
-            context_var = _get_context_var()
-            if context_var.get() is not None:
-                logger.error(f"Skipping {extension_name} because it's already set")
-                return fn(*args, **kwargs)
-
-            # Set the current extension
-            with _extension_context(extension_name):
-                logger.error(f"Setting {extension_name} extension name")
-                return fn(*args, **kwargs)
-
-        return wrapper
+    def deco(obj):
+        if inspect.isclass(obj):
+            return _wrap_class(obj, extension_name, public_only=public_only)
+        return _wrap_callable_with_extension(obj, extension_name)
 
     return deco
 
@@ -123,7 +238,6 @@ def track_model_call(model_method: ModelMethodType, param_names: list[str]) -> C
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            logger.error(f"Calling {func.__name__} with args: {args} and kwargs: {kwargs}")
             return _safe_call_with_telemetry(
                 func, args, kwargs, model_method, param_names
             )
@@ -217,7 +331,6 @@ def _send_model_called_event(call_info: _ModelCallInfo, duration_ms: int) -> Non
 
     # Send event, catch all backend exceptions
     try:
-        logger.error(f"Capturing event: {event.properties} {get_current_extension()}")
         capture_event(event)
     except Exception as e:  # noqa: BLE001
         logger.debug(f"Event capture failed: {e}")
@@ -337,7 +450,8 @@ def _make_callinfo(
     shapes: dict[str, tuple[int, ...]] = {}
     for param_name in param_names:
         if param_name in bound.arguments:
-            shape = shape_of(bound.arguments[param_name])
+            # Round the dimensionality of the dataset
+            shape = _round_dims(shape_of(bound.arguments[param_name]))
             if shape is not None:
                 shapes[param_name] = shape
 
@@ -345,7 +459,14 @@ def _make_callinfo(
 
 
 def _infer_task(stack: list[_StackFrame]) -> ModelTaskType | None:
-    """Infer the model task from the call stack."""
+    """Infer the model task from the call stack.
+
+    Args:
+        stack: The call stack.
+
+    Returns:
+        The model task.
+    """
     for frame in stack:
         m = frame.module_name or ""
         if m.startswith("tabpfn.classifier"):
@@ -353,3 +474,35 @@ def _infer_task(stack: list[_StackFrame]) -> ModelTaskType | None:
         if m.startswith("tabpfn.regressor"):
             return "regression"
     return None
+
+
+def _round_dims(shape: tuple[int, int]) -> tuple[int, int]:
+    """Round the dimensionality of a dataset.
+
+    The intent is to anonymize the dataset dimensionality to prevent
+    leakage of sensitive information.
+
+    Args:
+        shape: The shape of the dataset.
+
+    Returns:
+        The rounded shape.
+    """
+    if not tuple(shape):
+        return 0, 0
+
+    # Limits for rounding the number of rows and columns
+    row_limits = [10, 50, 75, 100, 150, 200, 500, 1000]
+
+    # Limits for rounding the number of columns
+    col_limits = [5, 10, 15, 20, 25, 30, 40, 50, 75, 100]
+
+    def round_dim(n: int, limits: list[int]) -> int:
+        for limit in limits:
+            if n <= limit:
+                return limit
+        return (n // 50) * 50
+
+    num_rows = round_dim(shape[0], row_limits)
+    num_columns = round_dim(shape[1], col_limits)
+    return num_rows, num_columns

@@ -337,7 +337,7 @@ class TestPingEvent:
         assert "tabpfn_version" in props
 
         # Should be minimal - only base properties
-        assert len(props) == 3
+        assert len(props) == 4
 
     def test_ping_event_minimal_structure(self):
         """Test that PingEvent has minimal structure (no additional fields)"""
