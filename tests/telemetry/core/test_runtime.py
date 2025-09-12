@@ -5,7 +5,7 @@ import pytest
 import sys
 from unittest.mock import patch
 
-from tabpfn_common_utils.telemetry.interactive.runtime import (
+from tabpfn_common_utils.telemetry.core.runtime import (
     _is_ipy,
     _is_jupyter_kernel,
     _is_tty,
@@ -18,7 +18,7 @@ class TestRuntimeDetection:
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
-        self.module = "tabpfn_common_utils.telemetry.interactive.runtime"
+        self.module = "tabpfn_common_utils.telemetry.core.runtime"
 
     def test_get_runtime_interactive_ipython(self) -> None:
         """Test that IPython environments are detected as interactive."""

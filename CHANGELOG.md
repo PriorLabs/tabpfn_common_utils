@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.9] - 2025-09-12
+
+### Changed
+- **Disable Telemetry**: By default, disable telemetry in CI environments.
+
 ## [0.1.7] - 2024-12-19
 
 ### Enhanced

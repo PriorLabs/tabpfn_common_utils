@@ -2,8 +2,9 @@ import os
 
 from datetime import datetime
 from posthog import Posthog
-from tabpfn_common_utils.telemetry.core.events import BaseTelemetryEvent
-from tabpfn_common_utils.utils import singleton
+from .events import BaseTelemetryEvent
+from .runtime import get_runtime
+from ...utils import singleton
 from typing import Any, Dict, Optional
 
 
@@ -49,6 +50,11 @@ class ProductTelemetry:
         Returns:
             bool: True if telemetry is enabled, False otherwise.
         """
+        # Disable telemetry by default in CI environments
+        runtime = get_runtime()
+        if runtime.ci:
+            return False
+
         return os.getenv("TABPFN_DISABLE_TELEMETRY", "0").lower() not in ("1", "true")
 
     def capture(
