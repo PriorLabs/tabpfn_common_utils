@@ -94,6 +94,7 @@ class BaseTelemetryEvent:
     @property
     def properties(self) -> dict[str, Any]:
         d = asdict(self)
+        d["source"] = self.source
         d.pop("timestamp", None)
         d.pop("name", None)
         return d
