@@ -6,6 +6,7 @@ import sys
 from unittest.mock import patch
 
 from tabpfn_common_utils.telemetry.core.runtime import (
+    _is_ci,
     _is_ipy,
     _is_jupyter_kernel,
     _is_tty,
@@ -20,27 +21,45 @@ class TestRuntimeDetection:
     def setup(self) -> None:
         self.module = "tabpfn_common_utils.telemetry.core.runtime"
 
+    def test_get_runtime_ci_environment(self) -> None:
+        """Test that CI environments are detected correctly."""
+        with patch(f"{self.module}._is_ci", return_value=True):
+            runtime = get_runtime()
+            assert runtime.ci is True
+            assert runtime.interactive is False
+            assert runtime.kernel is None
+
     def test_get_runtime_interactive_ipython(self) -> None:
         """Test that IPython environments are detected as interactive."""
-
-        with patch(f"{self.module}._is_ipy", return_value=True):
-            assert get_runtime().interactive is True
+        with (
+            patch(f"{self.module}._is_ci", return_value=False),
+            patch(f"{self.module}._is_ipy", return_value=True),
+        ):
+            runtime = get_runtime()
+            assert runtime.interactive is True
+            assert runtime.ci is False
 
     def test_get_runtime_interactive_jupyter(self) -> None:
         """Test that Jupyter environments are detected as interactive."""
         with (
+            patch(f"{self.module}._is_ci", return_value=False),
             patch(f"{self.module}._is_ipy", return_value=False),
             patch(f"{self.module}._is_jupyter_kernel", return_value=True),
         ):
-            assert get_runtime().interactive is True
+            runtime = get_runtime()
+            assert runtime.interactive is True
+            assert runtime.ci is False
 
     def test_get_runtime_default_noninteractive(self) -> None:
         """Test that default environment is noninteractive."""
         with (
+            patch(f"{self.module}._is_ci", return_value=False),
             patch(f"{self.module}._is_ipy", return_value=False),
             patch(f"{self.module}._is_jupyter_kernel", return_value=False),
         ):
-            assert get_runtime().interactive is False
+            runtime = get_runtime()
+            assert runtime.interactive is False
+            assert runtime.ci is False
 
 
 class TestIPythonCheck:
@@ -83,6 +102,60 @@ class TestJupyterKernelCheck:
             patch.dict(os.environ, {}, clear=True),
         ):
             assert _is_jupyter_kernel() is False
+
+
+class TestCICheck:
+    """Test CI environment detection."""
+
+    def test_is_ci_github_actions(self) -> None:
+        """Test CI detection with GitHub Actions."""
+        with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}):
+            assert _is_ci() is True
+
+    def test_is_ci_gitlab_ci(self) -> None:
+        """Test CI detection with GitLab CI."""
+        with patch.dict(os.environ, {"GITLAB_CI": "true"}):
+            assert _is_ci() is True
+
+    def test_is_ci_jenkins(self) -> None:
+        """Test CI detection with Jenkins."""
+        with patch.dict(os.environ, {"JENKINS_URL": "http://jenkins.example.com"}):
+            assert _is_ci() is True
+
+    def test_is_ci_travis(self) -> None:
+        """Test CI detection with Travis CI."""
+        with patch.dict(os.environ, {"TRAVIS": "true"}):
+            assert _is_ci() is True
+
+    def test_is_ci_circleci(self) -> None:
+        """Test CI detection with CircleCI."""
+        with patch.dict(os.environ, {"CIRCLECI": "true"}):
+            assert _is_ci() is True
+
+    def test_is_ci_azure_devops(self) -> None:
+        """Test CI detection with Azure DevOps."""
+        with patch.dict(os.environ, {"TF_BUILD": "true"}):
+            assert _is_ci() is True
+
+    def test_is_ci_aws_codebuild(self) -> None:
+        """Test CI detection with AWS CodeBuild."""
+        with patch.dict(os.environ, {"CODEBUILD_BUILD_ID": "build-123"}):
+            assert _is_ci() is True
+
+    def test_is_ci_google_cloud_build(self) -> None:
+        """Test CI detection with Google Cloud Build."""
+        with patch.dict(os.environ, {"BUILD_ID": "build-123"}):
+            assert _is_ci() is True
+
+    def test_is_ci_no_indicators(self) -> None:
+        """Test CI detection with no CI indicators."""
+        with patch.dict(os.environ, {}, clear=True):
+            assert _is_ci() is False
+
+    def test_is_ci_returns_bool(self) -> None:
+        """Test that _is_ci always returns a boolean."""
+        result = _is_ci()
+        assert isinstance(result, bool)
 
 
 class TestTTYCheck:
