@@ -1,6 +1,6 @@
 [project]
 name = "tabpfn-common-utils"
-version = "0.1.8"
+version = "0.1.9"
 description = "Utilities shared between TabPFN codebases"
 readme = "README.md"
 authors = [
