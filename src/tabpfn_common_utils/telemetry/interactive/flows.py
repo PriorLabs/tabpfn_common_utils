@@ -10,7 +10,7 @@ from ..core import PingEvent, capture_event
 from .prompts.base import PromptSpec
 from .prompts.newsletter import NewsletterPrompt
 from .prompts.identity import IdentityPrompt
-from .runtime import get_runtime
+from ..core.runtime import get_runtime
 
 
 def ping(enabled: bool = True) -> None:
