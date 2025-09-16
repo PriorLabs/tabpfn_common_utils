@@ -72,8 +72,9 @@ class ProductTelemetry:
             properties (dict): The additional properties attached to an event.
             timestamp (datetime): The timestamp of the event.
         """
-        if self._posthog_client is None:
-            return
+        #if self._posthog_client is None:
+        # TODO: Remove this once we have more knowledge of the number of events
+        return
 
         # Anonymous default UUID in case no explicit consent to opt in to telemetry
         user_id = distinct_id or "00000000-0000-0000-0000-000000000000"
