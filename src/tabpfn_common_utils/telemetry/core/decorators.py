@@ -260,15 +260,24 @@ def _make_callinfo(
     shapes: dict[str, tuple[int, ...]] = {}
     for param_name in param_names:
         if param_name in bound.arguments:
-            shape = shape_of(bound.arguments[param_name])
-            if shape is not None:
+            # Round the dimensionality of the dataset
+            raw_shape = shape_of(bound.arguments[param_name])
+            if raw_shape is not None:
+                shape = _round_dims(raw_shape)
                 shapes[param_name] = shape
 
     return _ModelCallInfo(shapes=shapes, task=task, model_method=model_method)
 
 
 def _infer_task(stack: list[_StackFrame]) -> ModelTaskType | None:
-    """Infer the model task from the call stack."""
+    """Infer the model task from the call stack.
+
+    Args:
+        stack: The call stack.
+
+    Returns:
+        The model task.
+    """
     for frame in stack:
         m = frame.module_name or ""
         if m.startswith("tabpfn.classifier"):
@@ -276,3 +285,40 @@ def _infer_task(stack: list[_StackFrame]) -> ModelTaskType | None:
         if m.startswith("tabpfn.regressor"):
             return "regression"
     return None
+
+
+def _round_dims(shape: tuple[int, int]) -> tuple[int, int]:
+    """Round the dimensionality of a dataset.
+
+    The intent is to anonymize the dataset dimensionality to prevent
+    leakage of sensitive information.
+
+    The function obscures the exact number of rows and columns in a dataset
+    by rounding them up to the nearest predefined thresholds. This helps
+    prevent leakage of sensitive information that might be inferred from
+    precise dataset dimensions.
+
+    Args:
+        shape: The shape of the dataset.
+
+    Returns:
+        The rounded shape.
+    """
+    if not tuple(shape):
+        return 0, 0
+
+    # Limits for rounding the number of rows and columns
+    row_limits = [10, 50, 75, 100, 150, 200, 500, 1000]
+
+    # Limits for rounding the number of columns
+    col_limits = [5, 10, 15, 20, 25, 30, 40, 50, 75, 100]
+
+    def round_dim(n: int, limits: list[int]) -> int:
+        for limit in limits:
+            if n <= limit:
+                return limit
+        return (n // 50) * 50
+
+    num_rows = round_dim(shape[0], row_limits)
+    num_columns = round_dim(shape[1], col_limits)
+    return num_rows, num_columns
