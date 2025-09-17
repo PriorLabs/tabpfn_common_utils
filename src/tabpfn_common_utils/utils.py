@@ -81,6 +81,7 @@ def ttl_cache(ttl_seconds: int = 60, max_size: int = 1):
     Returns:
         The decorator.
     """
+
     def decorator(func):
         # Set up the LRU cache properties
         func = lru_cache(maxsize=max_size)(func)
@@ -93,7 +94,9 @@ def ttl_cache(ttl_seconds: int = 60, max_size: int = 1):
                 func.cache_clear()
                 func.expires_at = time.time() + func.ttl_seconds  # type: ignore
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -287,5 +290,3 @@ class PreprocessorConfig:
             "subsample_features": self.subsample_features,
             "global_transformer_name": self.global_transformer_name,
         }
-
-

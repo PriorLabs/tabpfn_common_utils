@@ -107,7 +107,7 @@ class ProductTelemetry:
             properties (dict): The additional properties attached to an event.
             timestamp (datetime): The timestamp of the event.
         """
-        if self._do_flush_or_capture() is False:
+        if self.telemetry_enabled() is False:
             return
 
         # Anonymous default UUID in case no explicit consent to opt in to telemetry
@@ -117,7 +117,7 @@ class ProductTelemetry:
         properties = {**event.properties, **(properties or {})}
 
         try:
-            # self._posthog_client will not be None if self._do_flush_or_capture() is True
+            # self._posthog_client will not be None if self.telemetry_enabled() is True
             self._posthog_client.capture(  # type: ignore
                 distinct_id=user_id,
                 event=event.name,
@@ -132,22 +132,14 @@ class ProductTelemetry:
         """
         Flush the PostHog client telemetry queue.
         """
-        if self._do_flush_or_capture() is False:
+        if self.telemetry_enabled() is False:
             return
 
         try:
-            self._posthog_client.flush()
+            self._posthog_client.flush()  # type: ignore
         except Exception:
             # Silently ignore any errors
             pass
-
-    def _do_flush_or_capture(self) -> bool:
-        """Determine whether to handle a capture or flush event.
-
-        Returns:
-            bool: True if the event should be handled, False otherwise.
-        """
-        return self.telemetry_enabled() is True and self._posthog_client is not None
 
 
 def capture_event(
