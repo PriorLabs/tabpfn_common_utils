@@ -14,6 +14,7 @@ class Runtime:
 
     interactive: bool
     kernel: Literal["ipython", "jupyter", "tty"] | None = None
+    ci: bool = False
 
 
 def get_runtime() -> Runtime:
@@ -22,7 +23,11 @@ def get_runtime() -> Runtime:
     Returns:
         The runtime environment.
     """
-    # First check for IPython
+    # First check for CI
+    if _is_ci():
+        return Runtime(interactive=False, kernel=None, ci=True)
+
+    # Check for IPython
     if _is_ipy():
         return Runtime(interactive=True, kernel="ipython")
 
@@ -81,3 +86,33 @@ def _is_tty() -> bool:
         return sys.stdin.isatty() and sys.stdout.isatty()
     except (OSError, AttributeError, IndexError):
         return False
+
+
+def _is_ci() -> bool:
+    """Check if the current environment is a CI environment.
+
+    Returns:
+        True if the current environment is a CI environment, False otherwise.
+    """
+    # Common CI environment variables
+    ci_env_vars = {
+        # GitHub Actions
+        "GITHUB_ACTIONS",
+        # GitLab CI
+        "GITLAB_CI",
+        # Jenkins
+        "JENKINS_URL",
+        "JENKINS_HOME",
+        # Travis CI
+        "TRAVIS",
+        # CircleCI
+        "CIRCLECI",
+        # Azure DevOps
+        "TF_BUILD",
+        "AZURE_DEVOPS",
+        # AWS CodeBuild
+        "CODEBUILD_BUILD_ID",
+        # Google Cloud Build
+        "BUILD_ID",
+    }
+    return any(os.environ.get(var) for var in ci_env_vars)

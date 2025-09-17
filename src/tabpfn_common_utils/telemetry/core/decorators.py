@@ -451,8 +451,9 @@ def _make_callinfo(
     for param_name in param_names:
         if param_name in bound.arguments:
             # Round the dimensionality of the dataset
-            shape = _round_dims(shape_of(bound.arguments[param_name]))
-            if shape is not None:
+            raw_shape = shape_of(bound.arguments[param_name])
+            if raw_shape is not None:
+                shape = _round_dims(raw_shape)
                 shapes[param_name] = shape
 
     return _ModelCallInfo(shapes=shapes, task=task, model_method=model_method)
@@ -481,6 +482,11 @@ def _round_dims(shape: tuple[int, int]) -> tuple[int, int]:
 
     The intent is to anonymize the dataset dimensionality to prevent
     leakage of sensitive information.
+
+    The function obscures the exact number of rows and columns in a dataset
+    by rounding them up to the nearest predefined thresholds. This helps
+    prevent leakage of sensitive information that might be inferred from
+    precise dataset dimensions.
 
     Args:
         shape: The shape of the dataset.
