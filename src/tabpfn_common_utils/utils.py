@@ -1,4 +1,7 @@
+import time
 import typing
+
+from functools import lru_cache, wraps
 
 import pandas as pd
 import numpy as np
@@ -66,6 +69,32 @@ def singleton(cls):
         return instance[0]
 
     return wrapper
+
+
+def ttl_cache(ttl_seconds: int = 60, max_size: int = 1):
+    """Decorator to cache the result of a function using a TTL.
+
+    Args:
+        ttl_seconds: The time to live for the cached result.
+        max_size: The maximum size of the cache.
+
+    Returns:
+        The decorator.
+    """
+    def decorator(func):
+        # Set up the LRU cache properties
+        func = lru_cache(maxsize=max_size)(func)
+        func.ttl_seconds = ttl_seconds  # type: ignore
+        func.expires_at = time.time() + ttl_seconds  # type: ignore
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if time.time() >= func.expires_at:  # type: ignore
+                func.cache_clear()
+                func.expires_at = time.time() + func.ttl_seconds  # type: ignore
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def shape_of(X: Any) -> tuple[int, int]:
@@ -258,3 +287,5 @@ class PreprocessorConfig:
             "subsample_features": self.subsample_features,
             "global_transformer_name": self.global_transformer_name,
         }
+
+
