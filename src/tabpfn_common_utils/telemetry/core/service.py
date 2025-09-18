@@ -110,20 +110,26 @@ class ProductTelemetry:
         if self.telemetry_enabled() is False:
             return
 
-        # Anonymous default UUID in case no explicit consent to opt in to telemetry
-        user_id = distinct_id or "00000000-0000-0000-0000-000000000000"
+        # Add the check just for type safety
+        if self._posthog_client is None:
+            return
 
         # Merge the event properties with the provided properties
         properties = {**event.properties, **(properties or {})}
 
+        # Set up dynamic `capture` arguments
+        capture_args = {
+            "event": event.name,
+            "properties": properties,
+            "timestamp": timestamp or event.timestamp,
+        }
+
+        # Do not capture any user ID if it is not provided
+        if distinct_id:
+            capture_args["distinct_id"] = distinct_id
+
         try:
-            # self._posthog_client will not be None if self.telemetry_enabled() is True
-            self._posthog_client.capture(  # type: ignore
-                distinct_id=user_id,
-                event=event.name,
-                properties=properties,
-                timestamp=timestamp or event.timestamp,
-            )
+            self._posthog_client.capture(**capture_args)
         except Exception:
             # Silently ignore any errors
             pass
