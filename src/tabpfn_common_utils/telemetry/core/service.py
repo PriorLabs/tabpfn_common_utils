@@ -53,7 +53,10 @@ class ProductTelemetry:
         # Disable telemetry by default in CI environments, but allow override
         runtime = get_runtime()
         default_disable = "1" if runtime.ci else "0"
-        return os.getenv("TABPFN_DISABLE_TELEMETRY", default_disable).lower() not in ("1", "true")
+        return os.getenv("TABPFN_DISABLE_TELEMETRY", default_disable).lower() not in (
+            "1",
+            "true",
+        )
 
     def capture(
         self,
@@ -75,19 +78,22 @@ class ProductTelemetry:
         if self._posthog_client is None:
             return
 
-        # Anonymous default UUID in case no explicit consent to opt in to telemetry
-        user_id = distinct_id or "00000000-0000-0000-0000-000000000000"
-
         # Merge the event properties with the provided properties
         properties = {**event.properties, **(properties or {})}
 
+        # Set up dynamic `capture` arguments
+        capture_args = {
+            "event": event.name,
+            "properties": properties,
+            "timestamp": timestamp or event.timestamp,
+        }
+
+        # Do not capture any user ID if it is not provided
+        if distinct_id:
+            capture_args["distinct_id"] = distinct_id
+
         try:
-            self._posthog_client.capture(
-                distinct_id=user_id,
-                event=event.name,
-                properties=properties,
-                timestamp=timestamp or event.timestamp,
-            )
+            self._posthog_client.capture(**capture_args)
         except Exception:
             # Silently ignore any errors
             pass
