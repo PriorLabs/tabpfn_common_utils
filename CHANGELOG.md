@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-09-19
+
+### Added
+- **Toggle telemeetry**: Control telemetry toggle using a remote configuration file.
+- **Extensions**: Allow setting the context for TabPFN extensions.
+
 ## [0.1.9] - 2025-09-10
 
 ### Added
