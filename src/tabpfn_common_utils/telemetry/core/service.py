@@ -1,11 +1,17 @@
+import logging
 import os
+import requests
 
 from datetime import datetime
 from posthog import Posthog
 from .events import BaseTelemetryEvent
 from .runtime import get_runtime
-from ...utils import singleton
+from ...utils import singleton, ttl_cache
 from typing import Any, Dict, Optional
+
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 @singleton
@@ -42,8 +48,8 @@ class ProductTelemetry:
             flush_at=flush_at,
         )
 
-    @staticmethod
-    def telemetry_enabled() -> bool:
+    @classmethod
+    def telemetry_enabled(cls) -> bool:
         """
         Check if telemetry is enabled.
 
@@ -53,10 +59,36 @@ class ProductTelemetry:
         # Disable telemetry by default in CI environments, but allow override
         runtime = get_runtime()
         default_disable = "1" if runtime.ci else "0"
-        return os.getenv("TABPFN_DISABLE_TELEMETRY", default_disable).lower() not in (
-            "1",
-            "true",
+
+        # Overwrite any settings based on server-side configuration
+        config = cls._download_config()
+        if config["enabled"] is False:
+            return False
+
+        value = os.getenv("TABPFN_DISABLE_TELEMETRY", default_disable).lower()
+        return value not in ("1", "true")
+
+    @classmethod
+    @ttl_cache(ttl_seconds=60 * 5)
+    def _download_config(cls) -> Dict[str, Any]:
+        """Download the configuration from server.
+
+        Returns:
+            Dict[str, Any]: The configuration.
+        """
+        # This is a public URL anyone can and should read from
+        url = os.environ.get(
+            "TABPFN_TELEMETRY_CONFIG_URL",
+            "https://storage.googleapis.com/prior-labs-tabpfn-public/config/telemetry.json",
         )
+        resp = requests.get(url)
+
+        # Disable telemetry by default
+        if resp.status_code != 200:
+            logger.debug(f"Failed to download telemetry config: {resp.status_code}")
+            return {"enabled": False}
+
+        return resp.json()
 
     def capture(
         self,
@@ -75,6 +107,10 @@ class ProductTelemetry:
             properties (dict): The additional properties attached to an event.
             timestamp (datetime): The timestamp of the event.
         """
+        if self.telemetry_enabled() is False:
+            return
+
+        # Add the check just for type safety
         if self._posthog_client is None:
             return
 
@@ -102,11 +138,11 @@ class ProductTelemetry:
         """
         Flush the PostHog client telemetry queue.
         """
-        if not self._posthog_client:
+        if self.telemetry_enabled() is False:
             return
 
         try:
-            self._posthog_client.flush()
+            self._posthog_client.flush()  # type: ignore
         except Exception:
             # Silently ignore any errors
             pass

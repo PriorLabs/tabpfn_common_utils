@@ -27,6 +27,7 @@ dependencies = [
     "posthog~=6.7",
     "platformdirs>=4.4.0",
     "filelock>=3.19.1",
+    "requests>=2.32.5",
 ]
 
 [project.optional-dependencies]
@@ -41,9 +42,7 @@ build = [
   "build>=1.0.0",
   "twine>=5.0.0",
 ]
-telemetry-interactive = [
-  "requests>=2.32.3"
-]
+telemetry-interactive = []
 
 [project.urls]
 Homepage = "https://github.com/priorlabs/tabpfn_common_utils"
