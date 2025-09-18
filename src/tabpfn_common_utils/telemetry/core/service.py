@@ -2,7 +2,7 @@ import logging
 import os
 import requests
 
-from datetime import datetime
+from datetime import datetime, timezone
 from posthog import Posthog
 from .events import BaseTelemetryEvent
 from .runtime import get_runtime
@@ -76,12 +76,16 @@ class ProductTelemetry:
         Returns:
             Dict[str, Any]: The configuration.
         """
+        # Bust the cache
+        params = {
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+        }
         # This is a public URL anyone can and should read from
         url = os.environ.get(
             "TABPFN_TELEMETRY_CONFIG_URL",
             "https://storage.googleapis.com/prior-labs-tabpfn-public/config/telemetry.json",
         )
-        resp = requests.get(url)
+        resp = requests.get(url, params=params)
 
         # Disable telemetry by default
         if resp.status_code != 200:
