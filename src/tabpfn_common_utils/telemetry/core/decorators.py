@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import functools
 import inspect
 import logging
 import time
+
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from functools import wraps
+from typing import Any, Callable, Literal, Optional
 
 from .events import FitEvent, PredictEvent
 from .service import capture_event
@@ -15,6 +19,190 @@ from tabpfn_common_utils.utils import shape_of
 
 # Logger
 logger = logging.getLogger(__name__)
+
+# Current extension
+_CONTEXT_VARS = {}
+
+
+def _get_context_var():
+    """Get the shared context variable, ensuring it's the same 
+    instance across all imports.
+    
+    Returns:
+        The context variable.
+    """
+    var_name = "tabpfn_current_extension"
+    if var_name not in _CONTEXT_VARS:
+        _CONTEXT_VARS[var_name] = contextvars.ContextVar[Optional[str]](
+            var_name, default=None
+        )
+    return _CONTEXT_VARS[var_name]
+
+
+def get_current_extension() -> Optional[str]:
+    """Get the current extension.
+
+    Returns:
+        The name of the current extension.
+    """
+    return _get_context_var().get()
+
+
+@contextlib.contextmanager
+def _extension_context(extension_name: str):
+    """Context manager to set the current extension.
+
+    Args:
+        extension_name: The name of the extension to set.
+    """
+    context_var = _get_context_var()
+    tok = context_var.set(extension_name)
+    try:
+        yield
+    finally:
+        context_var.reset(tok)
+
+
+# Marker attribute for wrapped functions
+_MARKER_ATTR = "_tabpfn_extension_name"
+
+
+def _already_wrapped(fn, extension_name: str) -> bool:
+    """Check whether a callable is already wrapped for the given extension.
+
+    Args:
+        fn: The callable to check.
+        extension_name: The extension name.
+
+    Returns:
+        True if the callable already carries the marker.
+    """
+    f = fn
+    while True:
+        if getattr(f, _MARKER_ATTR, None) == extension_name:
+            return True
+
+        inner = getattr(f, "__wrapped__", None)
+        if inner is None:
+            return False
+        
+        f = inner
+
+
+def _is_public(name: str) -> bool:
+    """Check whether an attribute name is public.
+
+    Args:
+        name: The attribute name.
+
+    Returns:
+        True if the name does not start with an underscore.
+    """
+    return not name.startswith("_")
+
+
+def _is_sync_callable(fn) -> bool:
+    """Check whether a callable is synchronous (not async/generator-async).
+
+    Args:
+        fn: The callable to check.
+
+    Returns:
+        True if the callable is synchronous.
+    """
+    if inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn):
+        return False
+    return True
+    
+
+def _wrap_callable_with_extension(fn, extension_name: str):
+    """Wrap a synchronous callable so it runs under the extension context.
+
+    Skips wrapping if the callable is async or already wrapped for this extension.
+
+    Args:
+        fn: The callable to wrap.
+        extension_name: The extension name to set during the call.
+
+    Returns:
+        The wrapped callable, or the original if no wrapping was needed.
+    """
+    if not _is_sync_callable(fn) or _already_wrapped(fn, extension_name):
+        return fn
+
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        # Don't override an outer context
+        if _get_context_var().get() is not None:
+            return fn(*args, **kwargs)
+        with _extension_context(extension_name):
+            return fn(*args, **kwargs)
+
+    setattr(wrapped, _MARKER_ATTR, extension_name)
+    return wrapped
+
+
+def _wrap_class(cls, extension_name: str, public_only: bool = True):
+    """Wrap selected methods on a class so they run under the extension context.
+
+    Args:
+        cls: The class to modify in place.
+        extension_name: The extension name to set during wrapped method calls.
+        public_only: Whether to wrap only public methods.
+
+    Returns:
+        The modified class.
+    """
+    # Determine descriptors to skip
+    try:
+        from functools import cached_property
+        _skip_descriptors = (property, cached_property)
+    except Exception:
+        _skip_descriptors = (property,)
+
+    for name, attr in list(cls.__dict__.items()):
+
+        # Skip non-public methods
+        if public_only and not _is_public(name):
+            continue
+        
+        # Skip descriptors
+        if isinstance(attr, _skip_descriptors):
+            continue
+
+        # Wrap static/class methods
+        if isinstance(attr, (staticmethod, classmethod)):
+            fn = attr.__func__
+            wrapped_fn = _wrap_callable_with_extension(fn, extension_name)
+            if wrapped_fn is not fn:
+                setattr(cls, name, type(attr)(wrapped_fn))
+        
+        # Wrap regular functions
+        elif inspect.isfunction(attr):
+            wrapped_fn = _wrap_callable_with_extension(attr, extension_name)
+            if wrapped_fn is not attr:
+                setattr(cls, name, wrapped_fn)
+
+    return cls
+
+
+def set_extension(extension_name: str, public_only: bool = True):
+    """Decorator to set the current extension.
+
+    Args:
+        extension_name: The name of the extension to set.
+        public_only: Whether to wrap only public methods when decorating a class.
+
+    Returns:
+        A decorator that can be used on functions or classes.
+    """
+    def deco(obj):
+        if inspect.isclass(obj):
+            return _wrap_class(obj, extension_name, public_only=public_only)
+        return _wrap_callable_with_extension(obj, extension_name)
+
+    return deco
+
 
 # Type of model tasks
 ModelTaskType = Literal["classification", "regression"]
@@ -135,6 +323,8 @@ def _send_model_called_event(call_info: _ModelCallInfo, duration_ms: int) -> Non
     # Create event, might fail due to a type mismatch
     try:
         event = _event_cls(**event_kwargs)
+        # Set the extension name or None
+        event.extension = get_current_extension()
     except TypeError as e:
         logger.debug(f"Event creation failed: {e}")
         return
