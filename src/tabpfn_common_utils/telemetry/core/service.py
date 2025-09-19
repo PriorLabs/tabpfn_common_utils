@@ -60,13 +60,18 @@ class ProductTelemetry:
         runtime = get_runtime()
         default_disable = "1" if runtime.ci else "0"
 
+        disable_telemetry = os.getenv(
+            "TABPFN_DISABLE_TELEMETRY", default_disable
+        ).lower()
+        if disable_telemetry in ("1", "true"):
+            return False
+
         # Overwrite any settings based on server-side configuration
         config = cls._download_config()
         if config["enabled"] is False:
             return False
 
-        value = os.getenv("TABPFN_DISABLE_TELEMETRY", default_disable).lower()
-        return value not in ("1", "true")
+        return True
 
     @classmethod
     @ttl_cache(ttl_seconds=60 * 5)
