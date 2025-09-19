@@ -76,12 +76,19 @@ class ProductTelemetry:
         Returns:
             Dict[str, Any]: The configuration.
         """
+        # The default configuration
+        default = {"enabled": False}
+
         # This is a public URL anyone can and should read from
         url = os.environ.get(
             "TABPFN_TELEMETRY_CONFIG_URL",
             "https://storage.googleapis.com/prior-labs-tabpfn-public/config/telemetry.json",
         )
-        resp = requests.get(url)
+        try:
+            resp = requests.get(url)
+        except Exception:
+            logger.debug(f"Failed to download telemetry config: {url}")
+            return default
 
         # Disable telemetry by default
         if resp.status_code != 200:

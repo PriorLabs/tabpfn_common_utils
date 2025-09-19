@@ -1,4 +1,5 @@
 """Tests for telemetry decorators."""
+
 from __future__ import annotations
 
 import pytest

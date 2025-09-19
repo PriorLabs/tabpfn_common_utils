@@ -25,9 +25,9 @@ _CONTEXT_VARS = {}
 
 
 def _get_context_var():
-    """Get the shared context variable, ensuring it's the same 
+    """Get the shared context variable, ensuring it's the same
     instance across all imports.
-    
+
     Returns:
         The context variable.
     """
@@ -85,7 +85,7 @@ def _already_wrapped(fn, extension_name: str) -> bool:
         inner = getattr(f, "__wrapped__", None)
         if inner is None:
             return False
-        
+
         f = inner
 
 
@@ -113,7 +113,7 @@ def _is_sync_callable(fn) -> bool:
     if inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn):
         return False
     return True
-    
+
 
 def _wrap_callable_with_extension(fn, extension_name: str):
     """Wrap a synchronous callable so it runs under the extension context.
@@ -156,16 +156,16 @@ def _wrap_class(cls, extension_name: str, public_only: bool = True):
     # Determine descriptors to skip
     try:
         from functools import cached_property
+
         _skip_descriptors = (property, cached_property)
     except Exception:
         _skip_descriptors = (property,)
 
     for name, attr in list(cls.__dict__.items()):
-
         # Skip non-public methods
         if public_only and not _is_public(name):
             continue
-        
+
         # Skip descriptors
         if isinstance(attr, _skip_descriptors):
             continue
@@ -176,7 +176,7 @@ def _wrap_class(cls, extension_name: str, public_only: bool = True):
             wrapped_fn = _wrap_callable_with_extension(fn, extension_name)
             if wrapped_fn is not fn:
                 setattr(cls, name, type(attr)(wrapped_fn))
-        
+
         # Wrap regular functions
         elif inspect.isfunction(attr):
             wrapped_fn = _wrap_callable_with_extension(attr, extension_name)
@@ -196,6 +196,7 @@ def set_extension(extension_name: str, public_only: bool = True):
     Returns:
         A decorator that can be used on functions or classes.
     """
+
     def deco(obj):
         if inspect.isclass(obj):
             return _wrap_class(obj, extension_name, public_only=public_only)

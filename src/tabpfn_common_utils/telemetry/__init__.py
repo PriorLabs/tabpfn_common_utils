@@ -14,5 +14,5 @@ __all__ = [
     "capture_event",
     "track_model_call",
     "set_extension",
-    "get_current_extension"
+    "get_current_extension",
 ]
