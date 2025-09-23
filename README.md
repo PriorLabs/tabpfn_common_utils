@@ -123,6 +123,10 @@ uv add <package_name>
 uv add --group dev <package_name>
 ```
 
+## 📝 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
 ## Contributing
 
 Contributions are welcome! Please ensure all code passes type checking and formatting requirements.
