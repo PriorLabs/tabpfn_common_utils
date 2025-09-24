@@ -1,5 +1,6 @@
 import time
 import typing
+import uuid
 
 from functools import lru_cache, wraps
 
@@ -44,6 +45,16 @@ def to_httpx_post_file_format(file_uploads: typing.List[FileUpload]) -> typing.D
 
 def to_oauth_request_form(username: str, password: str) -> Dict[str, str]:
     return {"grant_type": "password", "username": username, "password": password}
+
+
+def uuid4() -> str:
+    """
+    Generate a random UUID4.
+
+    Returns:
+        str: UUID4 as a string.
+    """
+    return str(uuid.uuid4())
 
 
 class Singleton:

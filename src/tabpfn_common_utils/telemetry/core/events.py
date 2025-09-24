@@ -1,20 +1,9 @@
 import os
 import sys
-import uuid
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Literal, Optional
-
-
-def _uuid4() -> str:
-    """
-    Generate a random UUID4.
-
-    Returns:
-        str: UUID4 as a string.
-    """
-    return str(uuid.uuid4())
 
 
 def _utc_now() -> datetime:
@@ -28,7 +17,7 @@ def _utc_now() -> datetime:
 
 
 @lru_cache(maxsize=1)
-def _get_py_version() -> str:
+def get_py_version() -> str:
     """
     Get the Python version as a string.
 
@@ -40,7 +29,7 @@ def _get_py_version() -> str:
 
 
 @lru_cache(maxsize=1)
-def _get_sdk_version() -> str:
+def get_sdk_version() -> str:
     """
     Get the version of the tabpfn package if it's installed.
 
@@ -62,10 +51,10 @@ class BaseTelemetryEvent:
     """
 
     # Python version that the SDK is running on
-    python_version: str = field(default_factory=_get_py_version, init=False)
+    python_version: str = field(default_factory=get_py_version, init=False)
 
     # TabPFN version that the SDK is running on
-    tabpfn_version: str = field(default_factory=_get_sdk_version, init=False)
+    tabpfn_version: str = field(default_factory=get_sdk_version, init=False)
 
     # Timestamp of the event
     timestamp: datetime = field(default_factory=_utc_now, init=False)
