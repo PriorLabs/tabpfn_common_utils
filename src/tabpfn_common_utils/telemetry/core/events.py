@@ -96,6 +96,8 @@ class PingEvent(BaseTelemetryEvent):
     Event emitted when a ping is sent.
     """
 
+    frequency: Literal["daily", "weekly", "monthly"] = "daily"
+
     @property
     def name(self) -> str:
         return "ping"

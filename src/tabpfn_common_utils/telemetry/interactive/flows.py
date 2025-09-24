@@ -26,16 +26,29 @@ def ping(enabled: bool = True) -> None:
     utc_now = datetime.now(timezone.utc)
 
     # Determine whether we should ping
-    last_pinged_at = get_property("last_pinged_at", data_type=datetime)
-    if last_pinged_at and utc_now - last_pinged_at < timedelta(days=1):
-        return
+    frequency_days = {
+        "daily": 1,
+        "weekly": 7,
+        "monthly": 30,
+    }
+    for frequency, days in frequency_days.items():
+        key = f"last_pinged_at_{frequency}"
+        last_pinged_at = get_property(key, data_type=datetime)
 
-    # Ping the usage service
-    event = PingEvent()
-    capture_event(event)
+        # Maintain backward compatibility, avoid duplicates
+        if frequency == "daily" and not last_pinged_at:
+            last_pinged_at = get_property("last_pinged_at", data_type=datetime)
 
-    # Acknowledge the ping
-    set_property("last_pinged_at", utc_now)
+        # Check if the time since the last ping is greater than the delta days
+        if last_pinged_at and utc_now - last_pinged_at < timedelta(days=days):
+            return
+
+        # Ping the usage service
+        event = PingEvent()
+        capture_event(event)
+
+        # Acknowledge the ping
+        set_property(key, utc_now)
 
 
 def _trigger_prompts(delta_days: int, max_prompts: int) -> bool:
