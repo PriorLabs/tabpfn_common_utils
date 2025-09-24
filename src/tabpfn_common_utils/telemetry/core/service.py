@@ -143,7 +143,7 @@ class ProductTelemetry:
 
         # Allow all events if user started using tabpfn <= 5 days
         utc_now = datetime.now(timezone.utc)
-        delta = timedelta(days=config["install_date_delta"])
+        delta = timedelta(days=config.get("max_install_days", 5))
         if utc_now - install_date <= delta:
             return True
 
@@ -189,7 +189,7 @@ class ProductTelemetry:
             return
 
         # Determine whether to pass the event through to the PostHog client
-        if self._pass_through(event):
+        if not self._pass_through(event):
             return
 
         # Merge the event properties with the provided properties
