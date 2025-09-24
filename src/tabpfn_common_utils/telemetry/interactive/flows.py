@@ -41,7 +41,7 @@ def ping(enabled: bool = True) -> None:
 
         # Check if the time since the last ping is greater than the delta days
         if last_pinged_at and utc_now - last_pinged_at < timedelta(days=days):
-            return
+            continue
 
         # Ping the usage service
         event = PingEvent(frequency=frequency)  # type: ignore[arg-type]
