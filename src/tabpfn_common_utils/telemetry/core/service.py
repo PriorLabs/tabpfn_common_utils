@@ -1,12 +1,18 @@
 import logging
+import hashlib
 import os
 import requests
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from posthog import Posthog
-from .events import BaseTelemetryEvent
+from .events import (
+    BaseTelemetryEvent,
+    PingEvent,
+    get_sdk_version,
+)
 from .runtime import get_runtime
-from ...utils import singleton, ttl_cache
+from .state import get_property, set_property
+from ...utils import singleton, ttl_cache, uuid4
 from typing import Any, Dict, Optional
 
 
@@ -74,7 +80,7 @@ class ProductTelemetry:
         return True
 
     @classmethod
-    @ttl_cache(ttl_seconds=60 * 5)
+    @ttl_cache(ttl_seconds=60 * 30)
     def _download_config(cls) -> Dict[str, Any]:
         """Download the configuration from server.
 
@@ -102,6 +108,62 @@ class ProductTelemetry:
 
         return resp.json()
 
+    def _pass_through(self, event: BaseTelemetryEvent) -> bool:
+        """Determine whether to pass the event through to the PostHog client.
+
+        Args:
+            event: The event to pass through.
+
+        Returns:
+            bool: True if the event should be passed through, False otherwise.
+        """
+        # Pass through all ping events
+        if isinstance(event, PingEvent):
+            return True
+
+        # Get install ID
+        install_id = get_property("install_id", data_type=str)
+
+        # If no install ID, save a new one, not shared to servers
+        if not install_id:
+            install_id = uuid4()
+            set_property("install_id", install_id)
+
+        # Download remote configuration
+        config = self._download_config()
+
+        # Get install date
+        install_date = get_property("install_date", data_type=datetime)
+
+        # Assume first time user if no install date
+        if not install_date:
+            install_date = datetime.now(timezone.utc)
+            set_property("install_date", install_date)
+            return True
+
+        # Allow all events if user started using tabpfn <= 5 days
+        utc_now = datetime.now(timezone.utc)
+        delta = timedelta(days=config["install_date_delta"])
+        if utc_now - install_date <= delta:
+            return True
+
+        # Sample outliers by fit or predict duration
+        duration_ms = event.properties.get("duration_ms", 0)
+        if duration_ms > config.get("max_duration_ms", 10_000):
+            return True
+
+        # Fallback to sampling by key
+        sdk_version = get_sdk_version()
+        day = utc_now.strftime("%Y-%m-%d")
+        key = f"ver:{sdk_version}+install:{install_id}+day:{day}"
+
+        h = hashlib.sha256(key.encode()).digest()
+        n = int.from_bytes(h[:8], "big")
+        interval = n / 2**64
+
+        sampling_rate = config.get("sampling_rate", 0.3)
+        return interval < sampling_rate
+
     def capture(
         self,
         event: BaseTelemetryEvent,
@@ -124,6 +186,10 @@ class ProductTelemetry:
 
         # Add the check just for type safety
         if self._posthog_client is None:
+            return
+
+        # Determine whether to pass the event through to the PostHog client
+        if self._pass_through(event):
             return
 
         # Merge the event properties with the provided properties

@@ -2,25 +2,25 @@ import pytest
 import sys
 from datetime import datetime, timezone
 
+from tabpfn_common_utils.utils import uuid4
 from tabpfn_common_utils.telemetry.core.events import (
     BaseTelemetryEvent,
     DatasetEvent,
     FitEvent,
     PingEvent,
     PredictEvent,
-    _get_py_version,
-    _utc_now,
-    _uuid4,
+    get_py_version,
+    _utc_now
 )
 
 
 class TestUtilityFunctions:
     """Test utility functions in events.py"""
 
-    def test_uuid4_generation(self):
-        """Test that _uuid4 generates valid UUID strings"""
-        uuid1 = _uuid4()
-        uuid2 = _uuid4()
+    def testuuid4_generation(self):
+        """Test that uuid4 generates valid UUID strings"""
+        uuid1 = uuid4()
+        uuid2 = uuid4()
 
         # Should be different UUIDs
         assert uuid1 != uuid2
@@ -50,7 +50,7 @@ class TestUtilityFunctions:
 
     def test_get_py_version(self):
         """Test that _get_py_version returns correct Python version"""
-        version = _get_py_version()
+        version = get_py_version()
 
         # Should be a string
         assert isinstance(version, str)
