@@ -44,7 +44,7 @@ def ping(enabled: bool = True) -> None:
             return
 
         # Ping the usage service
-        event = PingEvent()
+        event = PingEvent(frequency=frequency)  # type: ignore[arg-type]
         capture_event(event)
 
         # Acknowledge the ping
