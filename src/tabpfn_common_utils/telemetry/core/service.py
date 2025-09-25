@@ -2,7 +2,7 @@ import logging
 import os
 import requests
 
-from datetime import datetime
+from datetime import datetime, timezone
 from posthog import Posthog
 from .events import BaseTelemetryEvent
 from .runtime import get_runtime
@@ -81,6 +81,11 @@ class ProductTelemetry:
         Returns:
             Dict[str, Any]: The configuration.
         """
+        # Bust the cache
+        params = {
+            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+        }
+    
         # The default configuration
         default = {"enabled": False}
 
@@ -90,7 +95,7 @@ class ProductTelemetry:
             "https://storage.googleapis.com/prior-labs-tabpfn-public/config/telemetry.json",
         )
         try:
-            resp = requests.get(url)
+            resp = requests.get(url, params=params)
         except Exception:
             logger.debug(f"Failed to download telemetry config: {url}")
             return default
@@ -98,7 +103,7 @@ class ProductTelemetry:
         # Disable telemetry by default
         if resp.status_code != 200:
             logger.debug(f"Failed to download telemetry config: {resp.status_code}")
-            return {"enabled": False}
+            return default
 
         return resp.json()
 
