@@ -64,6 +64,24 @@ def _trigger_prompts(delta_days: int, max_prompts: int) -> bool:
     """
     utc_now = datetime.now(timezone.utc)
 
+    # If new installation, don't prompt
+    install_date = get_property("install_date", data_type=datetime)
+    if not install_date:
+        set_property("install_date", utc_now)
+        return False
+
+    # Avoid prompt in first 24 hours
+    if utc_now - install_date <= timedelta(hours=24):
+        return False
+
+    # If used <= 5 times, don't prompt
+    nr_usages = get_property("nr_usages", 0, data_type=int)
+    set_property("nr_usages", nr_usages + 1)
+
+    if nr_usages <= 5:
+        return False
+
+    # If last prompted > 30 days, prompt
     last_prompted_at = get_property("last_prompted_at", data_type=datetime)
     if not last_prompted_at:
         return True
