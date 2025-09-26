@@ -78,7 +78,7 @@ def _trigger_prompts(delta_days: int, max_prompts: int) -> bool:
     nr_usages = get_property("nr_usages", 0, data_type=int)
     set_property("nr_usages", nr_usages + 1)
 
-    if nr_usages <= 5:
+    if nr_usages < 4:
         return False
 
     # If last prompted > 30 days, prompt
