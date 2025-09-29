@@ -1,12 +1,12 @@
 import logging
 import os
-import requests
 
-from datetime import datetime, timezone
+from datetime import datetime
 from posthog import Posthog
+from .config import download_config
 from .events import BaseTelemetryEvent
 from .runtime import get_runtime
-from ...utils import singleton, ttl_cache
+from ...utils import singleton
 from typing import Any, Dict, Optional
 
 
@@ -67,45 +67,11 @@ class ProductTelemetry:
             return False
 
         # Overwrite any settings based on server-side configuration
-        config = cls._download_config()
+        config = download_config()
         if config["enabled"] is False:
             return False
 
         return True
-
-    @classmethod
-    @ttl_cache(ttl_seconds=60 * 5)
-    def _download_config(cls) -> Dict[str, Any]:
-        """Download the configuration from server.
-
-        Returns:
-            Dict[str, Any]: The configuration.
-        """
-        # Bust the cache
-        params = {
-            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-        }
-    
-        # The default configuration
-        default = {"enabled": False}
-
-        # This is a public URL anyone can and should read from
-        url = os.environ.get(
-            "TABPFN_TELEMETRY_CONFIG_URL",
-            "https://storage.googleapis.com/prior-labs-tabpfn-public/config/telemetry.json",
-        )
-        try:
-            resp = requests.get(url, params=params)
-        except Exception:
-            logger.debug(f"Failed to download telemetry config: {url}")
-            return default
-
-        # Disable telemetry by default
-        if resp.status_code != 200:
-            logger.debug(f"Failed to download telemetry config: {resp.status_code}")
-            return default
-
-        return resp.json()
 
     def capture(
         self,
