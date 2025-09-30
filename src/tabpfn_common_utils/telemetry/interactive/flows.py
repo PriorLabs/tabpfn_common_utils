@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 from typing import List
+from ..core.config import download_config
 from ..core.state import get_property, set_property
 from ..core import PingEvent, capture_event
 from .prompts.base import PromptSpec
@@ -64,6 +65,32 @@ def _trigger_prompts(delta_days: int, max_prompts: int) -> bool:
     """
     utc_now = datetime.now(timezone.utc)
 
+    # Download prompt configuration
+    config = download_config()
+
+    # By default, don't prompt
+    if not config.get("prompt_user", False):
+        return False
+
+    # If new installation, don't prompt
+    install_date = get_property("install_date", data_type=datetime)
+    if not install_date:
+        set_property("install_date", utc_now)
+        return False
+
+    # Avoid prompt in first 24 hours
+    delta_hours = config.get("prompt_delta_hours", 24)
+    if utc_now - install_date <= timedelta(hours=delta_hours):
+        return False
+
+    # If used <= 5 times, don't prompt
+    nr_usages = get_property("nr_usages", 0, data_type=int)
+    set_property("nr_usages", nr_usages + 1)
+
+    if nr_usages < config.get("prompt_nr_usages", 5):
+        return False
+
+    # If last prompted > 30 days, prompt
     last_prompted_at = get_property("last_prompted_at", data_type=datetime)
     if not last_prompted_at:
         return True
