@@ -67,7 +67,7 @@ class TestRunsInTest:
         result1 = self.original_class._runs_in_test()
 
         # Check cache info
-        cache_info = self.original_class._runs_in_test.__func__.cache_info()
+        cache_info = self.original_class._runs_in_test.cache_info()  # type: ignore
         assert cache_info.hits == 0
         assert cache_info.misses == 1
 
@@ -76,7 +76,7 @@ class TestRunsInTest:
         assert result1 == result2
 
         # Check cache was used
-        cache_info = self.original_class._runs_in_test.__func__.cache_info()
+        cache_info = self.original_class._runs_in_test.cache_info()  # type: ignore
         assert cache_info.hits == 1
         assert cache_info.misses == 1
 
