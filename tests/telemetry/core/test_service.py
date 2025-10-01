@@ -48,17 +48,35 @@ class TestRunsInTest:
 
     def test_detects_pytest_in_argv(self) -> None:
         """Test detection via pytest in sys.argv[0]."""
-        with patch.object(sys, "argv", ["/usr/bin/pytest", "tests/"]):
+        # Clear env vars and modules to ensure only sys.argv detection is tested
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("tabpfn_common_utils.telemetry.core.service.sys.modules", {}),
+            patch.object(sys, "argv", ["/usr/bin/pytest", "tests/"]),
+        ):
+            self.original_class._runs_in_test.cache_clear()
             assert self.original_class._runs_in_test() is True
 
     def test_detects_py_test_in_argv(self) -> None:
         """Test detection via py.test in sys.argv[0]."""
-        with patch.object(sys, "argv", ["/usr/local/bin/py.test", "tests/"]):
+        # Clear env vars and modules to ensure only sys.argv detection is tested
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("tabpfn_common_utils.telemetry.core.service.sys.modules", {}),
+            patch.object(sys, "argv", ["/usr/local/bin/py.test", "tests/"]),
+        ):
+            self.original_class._runs_in_test.cache_clear()
             assert self.original_class._runs_in_test() is True
 
     def test_detects_pytest_uppercase_in_argv(self) -> None:
         """Test detection is case-insensitive for sys.argv[0]."""
-        with patch.object(sys, "argv", ["/path/to/PYTEST", "tests/"]):
+        # Clear env vars and modules to ensure only sys.argv detection is tested
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("tabpfn_common_utils.telemetry.core.service.sys.modules", {}),
+            patch.object(sys, "argv", ["/path/to/PYTEST", "tests/"]),
+        ):
+            self.original_class._runs_in_test.cache_clear()
             assert self.original_class._runs_in_test() is True
 
     def test_caching_behavior(self) -> None:
