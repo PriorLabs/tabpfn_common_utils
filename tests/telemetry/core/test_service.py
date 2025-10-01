@@ -15,8 +15,8 @@ class TestRunsInTest:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         """Set up test fixtures and clear cache before each test."""
-        self.original_class = ProductTelemetry.__closure__[0].cell_contents  # type: ignore
-        self.original_class._runs_in_test.__func__.cache_clear()
+        self.original_class = ProductTelemetry()  # type: ignore
+        self.original_class._runs_in_test.cache_clear()
 
     def test_detects_pytest_current_test_env_var(self) -> None:
         """Test detection via PYTEST_CURRENT_TEST environment variable."""
