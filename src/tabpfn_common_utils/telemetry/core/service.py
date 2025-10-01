@@ -99,7 +99,7 @@ class ProductTelemetry:
             return True
 
         # Inspect launch args
-        argv0 = (sys.argv[0] or "").lower()
+        argv0 = (sys.argv[0] if sys.argv else "").lower()
         if "pytest" in argv0 or "py.test" in argv0:
             return True
 
