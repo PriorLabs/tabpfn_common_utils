@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.3] - 2025-10-16
+
+### Changed
+- **Telemetry**: Surpress any telemetry logs, e.g. when internet connection not available.
+
 ## [0.2.2] - 2025-09-23
 
 ### Added
