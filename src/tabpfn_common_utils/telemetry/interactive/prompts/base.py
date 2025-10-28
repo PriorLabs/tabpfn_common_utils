@@ -89,7 +89,6 @@ def parse_input(
         if outcome is None:
             retries += 1
             if retries <= max_retries:
-                print(on_retry_message)
                 continue
             else:
                 # Max retries exceeded, treat as dismissed

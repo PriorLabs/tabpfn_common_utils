@@ -475,6 +475,8 @@ def _infer_task(stack: list[_StackFrame]) -> ModelTaskType | None:
             return "classification"
         if m.startswith("tabpfn.regressor"):
             return "regression"
+        if m.startswith("tabpfn_time_series"):
+            return "regression"
     return None
 
 
