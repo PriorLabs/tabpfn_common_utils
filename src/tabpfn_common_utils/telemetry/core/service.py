@@ -1,7 +1,9 @@
 import logging
 import os
+import sys
 
 from datetime import datetime
+from functools import lru_cache
 from posthog import Posthog
 from .config import download_config
 from .events import BaseTelemetryEvent
@@ -60,6 +62,10 @@ class ProductTelemetry:
         Returns:
             bool: True if telemetry is enabled, False otherwise.
         """
+        # Overwrite any telemetry if running in tests
+        if cls._runs_in_test():
+            return False
+
         # Disable telemetry by default in CI environments, but allow override
         runtime = get_runtime()
         default_disable = "1" if runtime.ci else "0"
@@ -76,6 +82,32 @@ class ProductTelemetry:
             return False
 
         return True
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def _runs_in_test(cls) -> bool:
+        """Auto-detect if the code is running in a test environment.
+
+        Returns:
+            bool: True if the code is running in a test environment, False otherwise.
+        """
+        # Detect automatically set PyTest environment variables
+        default_env_vars = {"PYTEST_CURRENT_TEST", "PYTEST_XDIST_WORKER"}
+        for name in default_env_vars:
+            if os.getenv(name):
+                return True
+
+        # Detect widely-used testing modules
+        modules = {"pytest", "unittest", "nose"}
+        if any(name in sys.modules for name in modules):
+            return True
+
+        # Inspect launch args
+        argv0 = (sys.argv[0] if sys.argv else "").lower()
+        if "pytest" in argv0 or "py.test" in argv0:
+            return True
+
+        return False
 
     def capture(
         self,
