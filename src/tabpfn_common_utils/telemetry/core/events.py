@@ -99,7 +99,7 @@ def _get_gpu_type() -> Optional[str]:
     except Exception:
         pass
 
-    return "unknown"
+    return None
 
 
 def _get_package_version(package_name: str) -> str:
