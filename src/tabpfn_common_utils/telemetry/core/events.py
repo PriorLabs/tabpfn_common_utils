@@ -70,6 +70,33 @@ def _get_sklearn_version() -> str:
     return _get_package_version("sklearn")
 
 
+def _get_numpy_version() -> str:
+    """Get the version of the NumPy library if it's installed.
+
+    Returns:
+        str: Version string if NumPy is installed.
+    """
+    return _get_package_version("numpy")
+
+
+def _get_pandas_version() -> str:
+    """Get the version of the Pandas library if it's installed.
+
+    Returns:
+        str: Version string if Pandas is installed.
+    """
+    return _get_package_version("pandas")
+
+
+def _get_autogluon_version() -> str:
+    """Get the version of the AutoGluon library if it's installed.
+
+    Returns:
+        str: Version string if AutoGluon is installed.
+    """
+    return _get_package_version("autogluon.core")
+
+
 @lru_cache(maxsize=None)
 def _get_gpu_type() -> Optional[str]:
     """Detect a local GPU using PyTorch (the TabPFN dependency) and return its
@@ -205,6 +232,15 @@ class ModelCallEvent(BaseTelemetryEvent):
 
     # Version of the scikit-learn
     sklearn_version: str = field(default_factory=_get_sklearn_version, init=False)
+
+    # Version of the NumPy
+    numpy_version: str = field(default_factory=_get_numpy_version, init=False)
+
+    # Version of the Pandas
+    pandas_version: str = field(default_factory=_get_pandas_version, init=False)
+
+    # Version of the AutoGluon
+    autogluon_version: str = field(default_factory=_get_autogluon_version, init=False)
 
     # Type of GPU if available
     gpu_type: Optional[str] = field(default_factory=_get_gpu_type, init=False)
