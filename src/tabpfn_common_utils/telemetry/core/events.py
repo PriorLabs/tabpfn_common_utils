@@ -1,10 +1,12 @@
 import os
+import platform
 import sys
 import uuid
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Literal, Optional
+from .runtime import get_runtime
 
 
 def _uuid4() -> str:
@@ -70,6 +72,7 @@ def _get_sklearn_version() -> str:
     return _get_package_version("sklearn")
 
 
+@lru_cache(maxsize=1)
 def _get_numpy_version() -> str:
     """Get the version of the NumPy library if it's installed.
 
@@ -79,6 +82,7 @@ def _get_numpy_version() -> str:
     return _get_package_version("numpy")
 
 
+@lru_cache(maxsize=1)
 def _get_pandas_version() -> str:
     """Get the version of the Pandas library if it's installed.
 
@@ -88,6 +92,7 @@ def _get_pandas_version() -> str:
     return _get_package_version("pandas")
 
 
+@lru_cache(maxsize=1)
 def _get_autogluon_version() -> str:
     """Get the version of the AutoGluon library if it's installed.
 
@@ -147,6 +152,27 @@ def _get_package_version(package_name: str) -> str:
         return "unknown"
 
 
+@lru_cache(maxsize=1)
+def _get_platform_os() -> str:
+    """Get the operating system of the platform.
+
+    Returns:
+        str: Operating system of the platform.
+    """
+    return platform.system()
+
+
+@lru_cache(maxsize=1)
+def _get_runtime_kernel() -> Optional[str]:
+    """Get the runtime environment of the platform.
+
+    Returns:
+        str: Runtime environment of the platform.
+    """
+    runtime = get_runtime()
+    return runtime.kernel
+
+
 @dataclass
 class BaseTelemetryEvent:
     """
@@ -164,6 +190,14 @@ class BaseTelemetryEvent:
 
     # Name of the TabPFN extension making the call
     extension: Optional[str] = field(default=None, init=False)
+
+    # Runtime environment of the platform
+    runtime_kernel: Optional[str] = field(
+        default_factory=_get_runtime_kernel, init=False
+    )
+
+    # Operating system of the platform
+    platform_os: str = field(default_factory=_get_platform_os, init=False)
 
     @property
     def name(self) -> str:

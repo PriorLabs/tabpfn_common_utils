@@ -13,7 +13,7 @@ class Runtime:
     """Runtime environment."""
 
     interactive: bool
-    kernel: Literal["ipython", "jupyter", "tty"] | None = None
+    kernel: Literal["ipython", "jupyter", "tty", "kaggle"] | None = None
     ci: bool = False
 
 
@@ -23,7 +23,11 @@ def get_runtime() -> Runtime:
     Returns:
         The runtime environment.
     """
-    # First check for CI
+    # First check for Kaggle
+    if _is_kaggle():
+        return Runtime(interactive=True, kernel="kaggle")
+
+    # Next check for CI
     if _is_ci():
         return Runtime(interactive=False, kernel=None, ci=True)
 
@@ -41,6 +45,25 @@ def get_runtime() -> Runtime:
 
     # Default to non-interactive
     return Runtime(interactive=False, kernel=None)
+
+
+def _is_kaggle() -> bool:
+    """Check if the current environment is running in a Kaggle kernel.
+
+    Returns:
+        bool: True if the current environment is running in a Kaggle kernel.
+    """
+    # Kaggle-specific and preset env vars
+    kaggle_env_vars = [
+        "KAGGLE_KERNEL_RUN_TYPE",
+        "KAGGLE_URL_BASE",
+        "KAGGLE_KERNEL_INTEGRATIONS",
+        "KAGGLE_USER_SECRETS_TOKEN",
+    ]
+    if any(v in os.environ for v in kaggle_env_vars):
+        return True
+
+    return False
 
 
 def _is_ipy() -> bool:
