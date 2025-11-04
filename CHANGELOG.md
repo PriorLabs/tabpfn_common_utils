@@ -2,11 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.5] - 2025-11-04
+
+### Added
+- Track additional and anonymous runtime properties like local `numpy` and `pandas` versions.
+
 ## [0.2.4] - 2025-10-28
 
 ### Changed
 - Fix an issue due to which telemetry was not recorded for TabPFN-TS using the API client
-
 
 ## [0.2.3] - 2025-10-16
 
