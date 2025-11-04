@@ -1,10 +1,12 @@
 import os
+import platform
 import sys
 import uuid
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Literal, Optional
+from .runtime import get_runtime
 
 
 def _uuid4() -> str:
@@ -47,12 +49,128 @@ def _get_sdk_version() -> str:
     Returns:
         str: Version string if tabpfn is installed.
     """
-    try:
-        import tabpfn  # type: ignore[import]
+    return _get_package_version("tabpfn")
 
-        return getattr(tabpfn, "__version__", "unknown")
+
+@lru_cache(maxsize=1)
+def _get_torch_version() -> str:
+    """Get the version of the PyTorch library if it's installed.
+
+    Returns:
+        str: Version string if PyTorch is installed.
+    """
+    return _get_package_version("torch")
+
+
+@lru_cache(maxsize=1)
+def _get_sklearn_version() -> str:
+    """Get the version of the scikit-learn library if it's installed.
+
+    Returns:
+        str: Version string if scikit-learn is installed.
+    """
+    return _get_package_version("sklearn")
+
+
+@lru_cache(maxsize=1)
+def _get_numpy_version() -> str:
+    """Get the version of the NumPy library if it's installed.
+
+    Returns:
+        str: Version string if NumPy is installed.
+    """
+    return _get_package_version("numpy")
+
+
+@lru_cache(maxsize=1)
+def _get_pandas_version() -> str:
+    """Get the version of the Pandas library if it's installed.
+
+    Returns:
+        str: Version string if Pandas is installed.
+    """
+    return _get_package_version("pandas")
+
+
+@lru_cache(maxsize=1)
+def _get_autogluon_version() -> str:
+    """Get the version of the AutoGluon library if it's installed.
+
+    Returns:
+        str: Version string if AutoGluon is installed.
+    """
+    return _get_package_version("autogluon.core")
+
+
+@lru_cache(maxsize=None)
+def _get_gpu_type() -> Optional[str]:
+    """Detect a local GPU using PyTorch (the TabPFN dependency) and return its
+    human-readable name.
+
+    Returns:
+        Optional[str]: Human-readable name of the GPU if available.
+    """
+    try:
+        import torch  # type: ignore[import]
     except ImportError:
-        return "unknown"  # tabpfn is not installed
+        return None
+
+    try:
+        if torch.cuda.is_available():
+            name = torch.cuda.get_device_name(0)
+            return name or "unknown"
+
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Apple Silicon via MPS
+    try:
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            # torch doesn't expose an MPS "model string"
+            return "Apple M-series GPU (MPS)"
+    except Exception:
+        pass
+
+    return None
+
+
+def _get_package_version(package_name: str) -> str:
+    """Get the version of a package if it's installed.
+
+    Args:
+        package_name: Name of the package to import (e.g., "torch", "tabpfn").
+
+    Returns:
+        str: Version string if the package is installed, "unknown" otherwise.
+    """
+    try:
+        import importlib
+
+        module = importlib.import_module(package_name)  # type: ignore[import]
+        return getattr(module, "__version__", "unknown")
+    except ImportError:
+        return "unknown"
+
+
+@lru_cache(maxsize=1)
+def _get_platform_os() -> str:
+    """Get the operating system of the platform.
+
+    Returns:
+        str: Operating system of the platform.
+    """
+    return platform.system()
+
+
+@lru_cache(maxsize=1)
+def _get_runtime_kernel() -> Optional[str]:
+    """Get the runtime environment of the platform.
+
+    Returns:
+        str: Runtime environment of the platform.
+    """
+    runtime = get_runtime()
+    return runtime.kernel
 
 
 @dataclass
@@ -72,6 +190,14 @@ class BaseTelemetryEvent:
 
     # Name of the TabPFN extension making the call
     extension: Optional[str] = field(default=None, init=False)
+
+    # Runtime environment of the platform
+    runtime_kernel: Optional[str] = field(
+        default_factory=_get_runtime_kernel, init=False
+    )
+
+    # Operating system of the platform
+    platform_os: str = field(default_factory=_get_platform_os, init=False)
 
     @property
     def name(self) -> str:
@@ -127,13 +253,31 @@ class DatasetEvent(BaseTelemetryEvent):
 
 
 @dataclass
-class FitEvent(BaseTelemetryEvent):
+class ModelCallEvent(BaseTelemetryEvent):
     """
-    Event emitted when a model is fit.
+    Base class for events emitted when a model method is called (fit or predict).
     """
 
-    # Task associated with the fit call
+    # Task associated with the model call
     task: Literal["classification", "regression"]
+
+    # Version of the PyTorch
+    torch_version: str = field(default_factory=_get_torch_version, init=False)
+
+    # Version of the scikit-learn
+    sklearn_version: str = field(default_factory=_get_sklearn_version, init=False)
+
+    # Version of the NumPy
+    numpy_version: str = field(default_factory=_get_numpy_version, init=False)
+
+    # Version of the Pandas
+    pandas_version: str = field(default_factory=_get_pandas_version, init=False)
+
+    # Version of the AutoGluon
+    autogluon_version: str = field(default_factory=_get_autogluon_version, init=False)
+
+    # Type of GPU if available
+    gpu_type: Optional[str] = field(default_factory=_get_gpu_type, init=False)
 
     # Number of rows in the dataset
     num_rows: int = 0
@@ -141,8 +285,15 @@ class FitEvent(BaseTelemetryEvent):
     # Number of columns in the dataset
     num_columns: int = 0
 
-    # Duration of the fit call in milliseconds
+    # Duration of the model call in milliseconds
     duration_ms: int = -1
+
+
+@dataclass
+class FitEvent(ModelCallEvent):
+    """
+    Event emitted when a model is fit.
+    """
 
     @property
     def name(self) -> str:
@@ -150,22 +301,10 @@ class FitEvent(BaseTelemetryEvent):
 
 
 @dataclass
-class PredictEvent(BaseTelemetryEvent):
+class PredictEvent(ModelCallEvent):
     """
     Event emitted when a model is used to make predictions.
     """
-
-    # Task associated with the predict call
-    task: Literal["classification", "regression"]
-
-    # Number of rows in the dataset
-    num_rows: int = 0
-
-    # Number of columns in the dataset
-    num_columns: int = 0
-
-    # Duration of the predict call in milliseconds
-    duration_ms: int = -1
 
     @property
     def name(self) -> str:
