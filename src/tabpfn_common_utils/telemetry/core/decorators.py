@@ -7,6 +7,7 @@ import contextvars
 import functools
 import inspect
 import logging
+import json
 import time
 
 from dataclasses import dataclass
@@ -56,7 +57,12 @@ def set_model_config(
     """
     try:
         model_path = Path(model_path).name
-        token = f"{model_path}:{model_version}"
+        token = json.dumps(
+            {
+                "model_path": model_path,
+                "model_version": model_version
+            }
+        )
         tok = _get_context_var("tabpfn_model_path").set(token)
         return tok
     except Exception:
@@ -70,8 +76,14 @@ def get_model_config() -> Optional[Tuple[str, str]]:
         A tuple of model_path and model_version.
     """
     token = _get_context_var("tabpfn_model_path").get()
-    return None if token is None else tuple(token.split(":"))
-
+    if token is None:
+        return None
+    
+    try:
+        return json.loads(token)
+    except Exception:
+        return None
+    
 
 def get_current_extension() -> Optional[str]:
     """Get the current extension.
