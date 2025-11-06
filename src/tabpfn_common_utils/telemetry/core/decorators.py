@@ -10,8 +10,9 @@ import logging
 import time
 
 from dataclasses import dataclass
+from pathlib import Path
 from functools import wraps
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Literal, Optional, Tuple, Union
 
 from .events import FitEvent, PredictEvent
 from .service import capture_event
@@ -24,19 +25,49 @@ logger = logging.getLogger(__name__)
 _CONTEXT_VARS = {}
 
 
-def _get_context_var():
+def _get_context_var(var_name: str):
     """Get the shared context variable, ensuring it's the same
     instance across all imports.
+
+    Args:
+        var_name: The name of the context variable to get.
 
     Returns:
         The context variable.
     """
-    var_name = "tabpfn_current_extension"
     if var_name not in _CONTEXT_VARS:
         _CONTEXT_VARS[var_name] = contextvars.ContextVar[Optional[str]](
             var_name, default=None
         )
     return _CONTEXT_VARS[var_name]
+
+
+def set_model_config(
+    model_path: Union[str, Path], model_version: str
+) -> contextvars.Token[Optional[str]]:
+    """Set the current model path.
+
+    Args:
+        model_path: The path to the model.
+        model_version: The version of the model.
+    """
+    try:
+        model_path = Path(model_path).name
+        token = f"{model_path}:{model_version}"
+        tok = _get_context_var("tabpfn_model_path").set(token)
+        return tok
+    except Exception:
+        pass  #
+
+
+def get_model_config() -> Optional[Tuple[str, str]]:
+    """Get the current model path.
+
+    Returns:
+        A tuple of model_path and model_version.
+    """
+    token = _get_context_var("tabpfn_model_path").get()
+    return None if token is None else tuple(token.split(":"))
 
 
 def get_current_extension() -> Optional[str]:
@@ -45,7 +76,7 @@ def get_current_extension() -> Optional[str]:
     Returns:
         The name of the current extension.
     """
-    return _get_context_var().get()
+    return _get_context_var("tabpfn_current_extension").get()
 
 
 @contextlib.contextmanager
@@ -55,7 +86,7 @@ def _extension_context(extension_name: str):
     Args:
         extension_name: The name of the extension to set.
     """
-    context_var = _get_context_var()
+    context_var = _get_context_var("tabpfn_current_extension")
     tok = context_var.set(extension_name)
     try:
         yield
@@ -133,7 +164,7 @@ def _wrap_callable_with_extension(fn, extension_name: str):
     @wraps(fn)
     def wrapped(*args, **kwargs):
         # Don't override an outer context
-        if _get_context_var().get() is not None:
+        if _get_context_var("tabpfn_current_extension").get() is not None:
             return fn(*args, **kwargs)
         with _extension_context(extension_name):
             return fn(*args, **kwargs)
@@ -326,6 +357,17 @@ def _send_model_called_event(call_info: _ModelCallInfo, duration_ms: int) -> Non
         event = _event_cls(**event_kwargs)
         # Set the extension name or None
         event.extension = get_current_extension()
+
+        # Set the model path or None
+        config = get_model_config()
+        if config is not None:
+            # Unpack the model config
+            model_path, model_version = config
+
+            # Set the model path and version
+            event.model_path = model_path
+            event.model_version = model_version
+
     except TypeError as e:
         logger.debug(f"Event creation failed: {e}")
         return

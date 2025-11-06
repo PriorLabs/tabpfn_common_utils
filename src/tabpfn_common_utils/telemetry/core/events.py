@@ -279,6 +279,12 @@ class ModelCallEvent(BaseTelemetryEvent):
     # Type of GPU if available
     gpu_type: Optional[str] = field(default_factory=_get_gpu_type, init=False)
 
+    # Version of the model
+    model_version: Optional[str] = field(default=None, init=False)
+
+    # Path to the model
+    model_path: Optional[str] = field(default=None, init=False)
+
     # Number of rows in the dataset
     num_rows: int = 0
 

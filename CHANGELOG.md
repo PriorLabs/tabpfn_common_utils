@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.7] - 2025-11-06
+
+### Added
+- Anonymously track `model_path` and `model_version`.
+
 ## [0.2.6] - 2025-11-06
 
 ### Changed
