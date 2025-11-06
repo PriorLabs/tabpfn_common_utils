@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6] - 2025-11-06
+
+### Changed
+- Fix an issue because of which telemetry events were not sent.
+
 ## [0.2.5] - 2025-11-04
 
 ### Added
