@@ -44,12 +44,15 @@ def _get_context_var(var_name: str):
 
 def set_model_config(
     model_path: Union[str, Path], model_version: str
-) -> contextvars.Token[Optional[str]]:
+) -> Optional[contextvars.Token[Optional[str]]]:
     """Set the current model path.
 
     Args:
         model_path: The path to the model.
         model_version: The version of the model.
+
+    Returns:
+        The context variable token, or None if setting failed.
     """
     try:
         model_path = Path(model_path).name
@@ -57,7 +60,7 @@ def set_model_config(
         tok = _get_context_var("tabpfn_model_path").set(token)
         return tok
     except Exception:
-        pass  #
+        return None
 
 
 def get_model_config() -> Optional[Tuple[str, str]]:
