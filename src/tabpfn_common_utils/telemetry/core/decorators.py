@@ -43,6 +43,10 @@ def _get_context_var(var_name: str):
     return _CONTEXT_VARS[var_name]
 
 
+# TODO: In code with multiple estimators in a single thread it is possible that
+# we'll set this config before we read it and publish it as a metric. We're
+# accepting the limitation in this edge case for now in the interest of
+# expediency.
 def set_model_config(
     model_path: Union[str, Path], model_version: str
 ) -> Optional[contextvars.Token[Optional[str]]]:
