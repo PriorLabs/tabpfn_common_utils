@@ -10,7 +10,12 @@ from .events import (
     PredictEvent,
 )
 from .service import ProductTelemetry, capture_event
-from .decorators import track_model_call, set_extension, get_current_extension
+from .decorators import (
+    track_model_call,
+    set_extension,
+    get_current_extension,
+    set_model_config,
+)
 
 # Public exports
 __all__ = [
@@ -24,4 +29,5 @@ __all__ = [
     "track_model_call",
     "set_extension",
     "get_current_extension",
+    "set_model_config",
 ]
