@@ -57,12 +57,7 @@ def set_model_config(
     """
     try:
         model_path = Path(model_path).name
-        token = json.dumps(
-            {
-                "model_path": model_path,
-                "model_version": model_version
-            }
-        )
+        token = json.dumps({"model_path": model_path, "model_version": model_version})
         tok = _get_context_var("tabpfn_model_path").set(token)
         return tok
     except Exception:
@@ -78,12 +73,13 @@ def get_model_config() -> Optional[Tuple[str, str]]:
     token = _get_context_var("tabpfn_model_path").get()
     if token is None:
         return None
-    
+
     try:
-        return json.loads(token)
+        data = json.loads(token)
+        return data["model_path"], data["model_version"]
     except Exception:
         return None
-    
+
 
 def get_current_extension() -> Optional[str]:
     """Get the current extension.
