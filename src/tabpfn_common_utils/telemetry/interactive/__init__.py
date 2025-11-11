@@ -5,9 +5,9 @@ from __future__ import annotations
 
 try:
     # Import the specific functions to expose
-    from .flows import ping, opt_in
+    from .flows import ping, opt_in, capture_session
 
-    __all__ = ["ping", "opt_in"]
+    __all__ = ["ping", "opt_in", "capture_session"]
 
 except ImportError:
 

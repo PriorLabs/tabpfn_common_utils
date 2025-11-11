@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Literal, Optional
 from .runtime import get_runtime
+from .state import get_property, set_property
 
 
 def _uuid4() -> str:
@@ -27,6 +28,15 @@ def _utc_now() -> datetime:
         datetime: Current UTC date and time.
     """
     return datetime.now(timezone.utc)
+
+
+def _utc_now_date() -> str:
+    """Get the current UTC date as a string.
+
+    Returns:
+        str: Current UTC date in the format "YYYY-MM-DD".
+    """
+    return _utc_now().strftime("%Y-%m-%d")
 
 
 @lru_cache(maxsize=1)
@@ -173,6 +183,50 @@ def _get_runtime_kernel() -> Optional[str]:
     return runtime.kernel
 
 
+@lru_cache(maxsize=1)
+def _get_install_id() -> str:
+    """Get or create the install ID. If not set in disk-cached
+    state, generate a new one and store it in the state.
+
+    Returns:
+        str: The install ID.
+    """
+    install_id = get_property("install_id")
+
+    # Fallback to new install ID
+    if install_id is None:
+        install_id = _uuid4()
+        set_property("install_id", install_id)
+
+    return install_id
+
+
+@lru_cache(maxsize=1)
+def _get_install_date() -> str:
+    """Return the install date as YYYY-MM-DD.
+
+    In case the user was using TabPFN before this change was made,
+    the install date will not correspond to the actual install date,
+    but rather when the user upgraded the page and made a first call.
+
+    Returns:
+        str: The install date as YYYY-MM-DD.
+    """
+    value = get_property("install_date")
+
+    if isinstance(value, str):
+        try:
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return dt.date().isoformat()
+        except ValueError:
+            pass
+
+    # Fallback to current date
+    value = _utc_now_date()
+    set_property("install_date", value)
+    return value
+
+
 @dataclass
 class BaseTelemetryEvent:
     """
@@ -214,6 +268,24 @@ class BaseTelemetryEvent:
         d.pop("timestamp", None)
         d.pop("name", None)
         return d
+
+
+@dataclass
+class SessionEvent(BaseTelemetryEvent):
+    """
+    Event emitted when a session is started. A session in our case
+    is a single init call to TabPFNClassifier or TabPFNRegressor.
+    """
+
+    # Install ID of the user
+    install_id: str = field(default_factory=_get_install_id, init=False)
+
+    # Install date of the user
+    install_date: str = field(default_factory=_get_install_date, init=False)
+
+    @property
+    def name(self) -> str:
+        return "session"
 
 
 @dataclass

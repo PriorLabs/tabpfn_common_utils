@@ -290,13 +290,17 @@ def get_property(key: str, default: Any = None, data_type: type | None = None) -
         return value
 
 
-def set_property(key: str, value: Any) -> None:
+def set_property(key: str, value: Any) -> Any:
     """Set a property on the telemetry state.
 
     Args:
         key: The property name.
         value: The value to set.
+
+    Returns:
+        The value that was set.
     """
     state = load_state()
     state[key] = value
     save_state(state)
+    return value

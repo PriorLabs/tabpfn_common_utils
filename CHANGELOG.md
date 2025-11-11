@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.8] - 2025-11-11
+
+### Added
+- Anonymously track `install_id` and `install_date`
+
 ## [0.2.7] - 2025-11-06
 
 ### Added
