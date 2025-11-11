@@ -7,11 +7,24 @@ from datetime import datetime, timedelta, timezone
 from typing import List
 from ..core.config import download_config
 from ..core.state import get_property, set_property
-from ..core import PingEvent, capture_event
+from ..core import PingEvent, SessionEvent, capture_event
 from .prompts.base import PromptSpec
 from .prompts.newsletter import NewsletterPrompt
 from .prompts.identity import IdentityPrompt
 from ..core.runtime import get_runtime
+
+
+def capture_session(enabled: bool = True) -> None:
+    """Capture a session event.
+
+    Args:
+        enabled: Whether to capture a session event.
+    """
+    if not enabled:
+        return
+
+    event = SessionEvent()
+    capture_event(event)
 
 
 def ping(enabled: bool = True) -> None:

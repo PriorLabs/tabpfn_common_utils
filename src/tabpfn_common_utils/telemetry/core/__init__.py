@@ -8,6 +8,7 @@ from .events import (
     DatasetEvent,
     FitEvent,
     PredictEvent,
+    SessionEvent,
 )
 from .service import ProductTelemetry, capture_event
 from .decorators import (
@@ -25,6 +26,7 @@ __all__ = [
     "FitEvent",
     "PredictEvent",
     "ProductTelemetry",
+    "SessionEvent",
     "capture_event",
     "track_model_call",
     "set_extension",
