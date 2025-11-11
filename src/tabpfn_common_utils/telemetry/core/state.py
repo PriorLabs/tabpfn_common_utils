@@ -9,7 +9,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from platformdirs import user_config_dir
-from typing import Any, Callable
+from typing import Any
 
 
 # Check if filelock is available
@@ -253,25 +253,6 @@ def save_state(state: dict[str, Any]) -> None:
 
     path = _state_path()
     _write_with_lock(path, normalized)
-
-
-def get_or_create_property(
-    key: str,
-    default_factory: Callable[[], Any],
-    data_type: type | None = None,
-) -> Any:
-    """Get a property from the disk state or create it with
-    a default value if not found.
-
-    Args:
-        key: The property name.
-        default: The default value if the property not found.
-        data_type: The expected data type.
-    """
-    value = get_property(key, data_type)
-    if value is None:
-        value = set_property(key, default_factory())
-    return value
 
 
 def get_property(key: str, default: Any = None, data_type: type | None = None) -> Any:

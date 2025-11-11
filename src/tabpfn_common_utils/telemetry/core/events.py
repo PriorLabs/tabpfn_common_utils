@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Literal, Optional
 from .runtime import get_runtime
-from .state import get_or_create_property
+from .state import get_property, set_property
 
 
 def _uuid4() -> str:
@@ -191,7 +191,14 @@ def _get_install_id() -> str:
     Returns:
         str: The install ID.
     """
-    return get_or_create_property("install_id", _uuid4)
+    install_id = get_property("install_id")
+
+    # Fallback to new install ID
+    if install_id is None:
+        install_id = _uuid4()
+        set_property("install_id", install_id)
+
+    return install_id
 
 
 @lru_cache(maxsize=1)
@@ -205,7 +212,7 @@ def _get_install_date() -> str:
     Returns:
         str: The install date as YYYY-MM-DD.
     """
-    value = get_or_create_property("install_date", _utc_now_date)
+    value = get_property("install_date")
 
     if isinstance(value, str):
         try:
@@ -214,7 +221,10 @@ def _get_install_date() -> str:
         except ValueError:
             pass
 
-    return _utc_now_date()
+    # Fallback to current date
+    value = _utc_now_date()
+    set_property("install_date", value)
+    return value
 
 
 @dataclass
