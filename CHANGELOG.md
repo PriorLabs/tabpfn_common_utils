@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.9] - 2025-11-13
+
+### Added
+- Fix an issue where telemetry did not have access to files in ~/home directory
+
 ## [0.2.8] - 2025-11-11
 
 ### Added
