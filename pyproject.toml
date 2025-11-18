@@ -25,7 +25,7 @@ dependencies = [
     "scikit-learn>=1.2.0",
     "typing-extensions>=4.12,<5",
     "posthog~=6.7",
-    "platformdirs>=4.4.0",
+    "platformdirs>=4",
     "filelock>=3.19.1",
     "requests>=2.32.5",
 ]
