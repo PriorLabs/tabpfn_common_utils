@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.2.10] - 2025-11-18
 
-### Added
+### Changed
 - Make version requirement more flexible for `platformdirs` dependency, from `>=4.4` to `>=4`.
 
 ## [0.2.9] - 2025-11-13
