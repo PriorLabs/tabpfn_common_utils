@@ -28,6 +28,7 @@ dependencies = [
     "platformdirs>=4",
     "filelock>=3.19.1",
     "requests>=2.32.5",
+    "ruff>=0.11.6",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +36,7 @@ dev = [
   "pyright>=1.1.399",
   "pytest>=8.3",
   "pytest-cov>=5",
-  "ruff>=0.5",
+  "ruff>=0.9",
 ]
 build = [
   "hatchling>=1.25",
@@ -71,6 +72,7 @@ source = "vcs"
 [tool.hatch.build.hooks.vcs]
 version-file = "src/tabpfn_common_utils/_version.py"
 fallback-version = "0.0.0+dev"
+tag-pattern = "^v(?P<version>.+)$"
 
 [dependency-groups]
 build = [
