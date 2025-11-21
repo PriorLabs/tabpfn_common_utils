@@ -1,6 +1,6 @@
 [project]
 name = "tabpfn-common-utils"
-version = "0.2.9"
+dynamic = ["version"]
 description = "Utilities shared between TabPFN codebases"
 readme = "README.md"
 authors = [
@@ -49,7 +49,7 @@ Homepage = "https://github.com/priorlabs/tabpfn_common_utils"
 Issues = "https://github.com/priorlabs/tabpfn_common_utils/issues"
 
 [build-system]
-requires = ["hatchling>=1.25"]
+requires = ["hatchling>=1.25", "hatch-vcs>=0.3"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
@@ -65,11 +65,19 @@ target-version = "py39"
 [tool.pyright]
 include = ["src", "tests"]
 
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/tabpfn_common_utils/_version.py"
+fallback-version = "0.0.0+dev"
+
 [dependency-groups]
 build = [
-    "build>=1.3.0",
-    "hatchling>=1.27.0",
-    "twine>=6.1.0",
+  "build>=1.3.0",
+  "hatchling>=1.27.0",
+  "hatch-vcs>=0.3",
+  "twine>=6.1.0",
 ]
 dev = [
     "pytest>=8.3.5",
