@@ -101,6 +101,10 @@ jobs:
           TEST_DIR=$(mktemp -d)
           cd "$TEST_DIR"
           
+          # Create a virtual environment
+          uv venv
+          source .venv/bin/activate
+          
           # Install from TestPyPI using uv
           # Use --index-url for TestPyPI and --extra-index-url for dependencies from PyPI
           uv pip install \
@@ -109,7 +113,7 @@ jobs:
             tabpfn-common-utils==${VERSION}
           
           # Verify installation and version
-          INSTALLED_VERSION=$(uv run python -c "import tabpfn_common_utils; print(tabpfn_common_utils.__version__)")
+          INSTALLED_VERSION=$(python -c "import tabpfn_common_utils; print(tabpfn_common_utils.__version__)")
           
           if [ "$INSTALLED_VERSION" != "${VERSION}" ]; then
             echo "❌ Version mismatch! Expected ${VERSION}, got ${INSTALLED_VERSION}"
