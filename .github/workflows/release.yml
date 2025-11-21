@@ -106,8 +106,11 @@ jobs:
           source .venv/bin/activate
           
           # Install from TestPyPI using uv
+          # Use --index-url for TestPyPI and --extra-index-url for dependencies from PyPI
+          # (TestPyPI doesn't have all packages, so we need PyPI as fallback for dependencies)
           uv pip install \
             --index-url https://test.pypi.org/simple/ \
+            --extra-index-url https://pypi.org/simple/ \
             tabpfn-common-utils==${VERSION}
           
           # Verify installation and version
