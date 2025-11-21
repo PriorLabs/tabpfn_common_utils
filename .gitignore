@@ -169,3 +169,6 @@ devenv.local.nix
 # Ignore devenv because not every developer uses it.
 devenv*
 .envrc
+
+# Ignore dynamic files
+src/tabpfn_common_utils/_version.py
