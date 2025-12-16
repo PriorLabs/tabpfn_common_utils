@@ -5,7 +5,7 @@ import uuid
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Literal, Optional
+from typing import Any, Dict, Literal, Optional
 from .runtime import get_runtime
 from .state import get_property, set_property
 
@@ -372,6 +372,9 @@ class FitEvent(ModelCallEvent):
     """
     Event emitted when a model is fit.
     """
+
+    # Initial parameters of the model
+    init_params: Optional[Dict[str, Any]] = field(default=None, init=False)
 
     @property
     def name(self) -> str:
