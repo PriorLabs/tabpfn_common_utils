@@ -154,7 +154,7 @@ def _get_environment() -> Optional[EnvironmentType]:
         The environment the code is running in.
     """
     for env_type, hints in ENV_TYPE_HINTS.items():
-        if any(os.environ.get(k) for k in hints):
+        if any(k in os.environ for k in hints):
             return env_type
 
     return None
