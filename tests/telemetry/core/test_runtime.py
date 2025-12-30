@@ -10,7 +10,7 @@ from tabpfn_common_utils.telemetry.core.runtime import (
     _is_ipy,
     _is_jupyter_kernel,
     _is_tty,
-    get_runtime,
+    get_execution_context,
 )
 
 
@@ -24,7 +24,7 @@ class TestRuntimeDetection:
     def test_get_runtime_ci_environment(self) -> None:
         """Test that CI environments are detected correctly."""
         with patch(f"{self.module}._is_ci", return_value=True):
-            runtime = get_runtime()
+            runtime = get_execution_context()
             assert runtime.ci is True
             assert runtime.interactive is False
             assert runtime.kernel is None
@@ -35,7 +35,7 @@ class TestRuntimeDetection:
             patch(f"{self.module}._is_ci", return_value=False),
             patch(f"{self.module}._is_ipy", return_value=True),
         ):
-            runtime = get_runtime()
+            runtime = get_execution_context()
             assert runtime.interactive is True
             assert runtime.ci is False
 
@@ -46,7 +46,7 @@ class TestRuntimeDetection:
             patch(f"{self.module}._is_ipy", return_value=False),
             patch(f"{self.module}._is_jupyter_kernel", return_value=True),
         ):
-            runtime = get_runtime()
+            runtime = get_execution_context()
             assert runtime.interactive is True
             assert runtime.ci is False
 
@@ -57,7 +57,7 @@ class TestRuntimeDetection:
             patch(f"{self.module}._is_ipy", return_value=False),
             patch(f"{self.module}._is_jupyter_kernel", return_value=False),
         ):
-            runtime = get_runtime()
+            runtime = get_execution_context()
             assert runtime.interactive is False
             assert runtime.ci is False
 

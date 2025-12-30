@@ -5,7 +5,7 @@ from datetime import datetime
 from posthog import Posthog
 from .config import download_config
 from .events import BaseTelemetryEvent
-from .runtime import get_runtime
+from .runtime import get_execution_context
 from ...utils import singleton
 from typing import Any, Dict, Optional
 
@@ -71,8 +71,8 @@ class ProductTelemetry:
             bool: True if telemetry is enabled, False otherwise.
         """
         # Disable telemetry by default in CI environments, but allow override
-        runtime = get_runtime()
-        default_disable = "1" if runtime.ci else "0"
+        exec_context = get_execution_context()
+        default_disable = "1" if exec_context.ci else "0"
 
         disable_telemetry = os.getenv(
             "TABPFN_DISABLE_TELEMETRY", default_disable

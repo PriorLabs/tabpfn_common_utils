@@ -11,7 +11,7 @@ from ..core import PingEvent, SessionEvent, capture_event
 from .prompts.base import PromptSpec
 from .prompts.newsletter import NewsletterPrompt
 from .prompts.identity import IdentityPrompt
-from ..core.runtime import get_runtime
+from ..core.runtime import get_execution_context
 
 
 def capture_session(enabled: bool = True) -> None:
@@ -142,8 +142,8 @@ def opt_in(enabled: bool = True, delta_days: int = 30, max_prompts: int = 2) -> 
         return
 
     # Only show prompts in Jupyter/IPython
-    runtime = get_runtime()
-    if runtime.kernel not in {"jupyter", "ipython"}:
+    exec_context = get_execution_context()
+    if exec_context.kernel not in {"jupyter", "ipython"}:
         return
 
     # Check if prompts should be shown
