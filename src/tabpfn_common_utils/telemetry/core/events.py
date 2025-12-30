@@ -6,7 +6,7 @@ from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Dict, Literal, Optional
-from .runtime import get_runtime
+from .runtime import get_execution_context
 from .state import get_property, set_property
 
 
@@ -179,8 +179,8 @@ def _get_runtime_kernel() -> Optional[str]:
     Returns:
         str: Runtime environment of the platform.
     """
-    runtime = get_runtime()
-    return runtime.kernel
+    exec_context = get_execution_context()
+    return exec_context.kernel
 
 
 @lru_cache(maxsize=1)

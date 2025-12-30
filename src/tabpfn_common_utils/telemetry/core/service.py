@@ -5,7 +5,7 @@ from datetime import datetime
 from posthog import Posthog
 from .config import download_config
 from .events import BaseTelemetryEvent
-from .runtime import get_runtime
+from .runtime import get_execution_context
 from ...utils import singleton
 from typing import Any, Dict, Optional
 
@@ -35,7 +35,12 @@ class ProductTelemetry:
     # PostHog client instance
     _posthog_client: Optional[Posthog] = None
 
-    def __init__(self, max_queue_size: int = 10, flush_at: int = 10) -> None:
+    def __init__(
+        self,
+        max_queue_size: int = 10,
+        flush_at: int = 10,
+        api_key: Optional[str] = None,
+    ) -> None:
         """
         Initialize the Telemetry service.
         """
@@ -44,9 +49,12 @@ class ProductTelemetry:
             self._posthog_client = None
             return
 
+        if api_key is None:
+            api_key = self.PROJECT_API_KEY
+
         # Initialize the PostHog client
         self._posthog_client = Posthog(
-            project_api_key=self.PROJECT_API_KEY,
+            project_api_key=api_key,
             host=self.HOST,
             disable_geoip=True,
             enable_exception_autocapture=False,
@@ -63,8 +71,8 @@ class ProductTelemetry:
             bool: True if telemetry is enabled, False otherwise.
         """
         # Disable telemetry by default in CI environments, but allow override
-        runtime = get_runtime()
-        default_disable = "1" if runtime.ci else "0"
+        exec_context = get_execution_context()
+        default_disable = "1" if exec_context.ci else "0"
 
         disable_telemetry = os.getenv(
             "TABPFN_DISABLE_TELEMETRY", default_disable

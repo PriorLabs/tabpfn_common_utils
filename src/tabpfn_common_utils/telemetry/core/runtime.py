@@ -5,65 +5,159 @@ from __future__ import annotations
 import os
 import sys
 from dataclasses import dataclass
-from typing import Literal
+from typing import Callable, Dict, Literal, Mapping, Optional, Sequence, Tuple
 
 
-@dataclass
-class Runtime:
-    """Runtime environment."""
+# The type of kernel the code is running in
+KernelType = Literal["ipython", "jupyter", "tty"]
 
-    interactive: bool
-    kernel: Literal["ipython", "jupyter", "tty", "kaggle"] | None = None
-    ci: bool = False
+# The type of environment the code is running in
+EnvironmentType = Literal[
+    "kaggle",
+    "colab",
+    "gcp",
+    "aws",
+    "azure",
+    "databricks",
+]
 
-
-def get_runtime() -> Runtime:
-    """Get the runtime environment.
-
-    Returns:
-        The runtime environment.
-    """
-    # First check for Kaggle
-    if _is_kaggle():
-        return Runtime(interactive=True, kernel="kaggle")
-
-    # Next check for CI
-    if _is_ci():
-        return Runtime(interactive=False, kernel=None, ci=True)
-
-    # Check for IPython
-    if _is_ipy():
-        return Runtime(interactive=True, kernel="ipython")
-
-    # Jupyter kernel
-    if _is_jupyter_kernel():
-        return Runtime(interactive=True, kernel="jupyter")
-
-    # TTY
-    if _is_tty():
-        return Runtime(interactive=True, kernel="tty")
-
-    # Default to non-interactive
-    return Runtime(interactive=False, kernel=None)
-
-
-def _is_kaggle() -> bool:
-    """Check if the current environment is running in a Kaggle kernel.
-
-    Returns:
-        bool: True if the current environment is running in a Kaggle kernel.
-    """
-    # Kaggle-specific and preset env vars
-    kaggle_env_vars = [
+# Static list of environment hints, purely heuristic based on env variables.
+# This information is used purely for detecting purposes, and the values are
+# not propagated or stored in the telemetry state.
+ENV_TYPE_HINTS: Mapping[EnvironmentType, Sequence[str]] = {
+    # Notebook providers
+    "kaggle": [
+        # Kaggle kernels
         "KAGGLE_KERNEL_RUN_TYPE",
         "KAGGLE_URL_BASE",
         "KAGGLE_KERNEL_INTEGRATIONS",
         "KAGGLE_USER_SECRETS_TOKEN",
-    ]
-    if any(v in os.environ for v in kaggle_env_vars):
-        return True
+        "KAGGLE_GCP_PROJECT",
+        "KAGGLE_GCP_ZONE",
+    ],
+    "colab": [
+        # Google Colab
+        "COLAB_GPU",
+        "COLAB_TPU_ADDR",
+        "COLAB_JUPYTER_TRANSPORT",
+        "COLAB_BACKEND_VERSION",
+    ],
+    "databricks": [
+        # Databricks clusters and runtime
+        "DATABRICKS_RUNTIME_VERSION",
+        "DATABRICKS_CLUSTER_ID",
+        "DATABRICKS_HOST",
+        "DATABRICKS_WORKSPACE_URL",
+        "DB_IS_DRIVER",
+    ],
+    # Cloud providers
+    "aws": [
+        # Generic AWS environment hints
+        "AWS_EXECUTION_ENV",
+        "AWS_REGION",
+        "AWS_DEFAULT_REGION",
+        # SageMaker
+        "SM_MODEL_DIR",
+        "SM_NUM_GPUS",
+        "SM_HOSTS",
+        "SM_CURRENT_HOST",
+        "TRAINING_JOB_NAME",
+    ],
+    "gcp": [
+        # Project hints
+        "GOOGLE_CLOUD_PROJECT",
+        "GCP_PROJECT",
+        "GCLOUD_PROJECT",
+        "CLOUDSDK_CORE_PROJECT",
+        # Cloud Run and Cloud Functions
+        "K_SERVICE",
+        "K_REVISION",
+        "K_CONFIGURATION",
+        "CLOUD_RUN_JOB",
+        # Vertex AI
+        "AIP_MODEL_DIR",
+        "AIP_DATA_FORMAT",
+        "AIP_TRAINING_DATA_URI",
+        "CLOUD_ML_JOB_ID",
+        # Cloud Shell
+        "CLOUD_SHELL",
+    ],
+    "azure": [
+        # Azure ML
+        "AZUREML_RUN_ID",
+        "AZUREML_ARM_SUBSCRIPTION",
+        "AZUREML_ARM_RESOURCEGROUP",
+        "AZUREML_ARM_WORKSPACE_NAME",
+    ],
+}
 
-    return False
+
+@dataclass
+class ExecutionContext:
+    """The execution context of the current environment."""
+
+    interactive: bool
+    """Whether the code is running in an interactive environment."""
+
+    kernel: Optional[KernelType] = None
+    """Low-level Python frontend or shell (e.g. IPython, Jupyter, TTY)"""
+
+    environment: Optional[EnvironmentType] = None
+    """Higher-level hosted environment or notebook platform."""
+
+    ci: bool = False
+    """Whether the code is running in a CI environment."""
+
+
+def get_execution_context() -> ExecutionContext:
+    """Get the execution context of the current environment.
+
+    Returns:
+        The execution context of the current environment.
+    """
+    # First check for environment
+    environment = _get_environment()
+
+    # Next, get kernel information
+    interactive, kernel = _get_kernel()
+
+    context = ExecutionContext(
+        interactive=interactive, kernel=kernel, environment=environment, ci=_is_ci()
+    )
+    return context
+
+
+def _get_kernel() -> Tuple[bool, Optional[KernelType]]:
+    """Get the kernel the code is running in.
+
+    Returns:
+        A tuple of (whether the kernel is interactive, the kernel type).
+    """
+    mapping: Dict[KernelType, Callable[[], bool]] = {
+        "ipython": _is_ipy,
+        "jupyter": _is_jupyter_kernel,
+        "tty": _is_tty,
+    }
+    for kernel, func in mapping.items():
+        if func():
+            return True, kernel
+    return False, None
+
+
+def _get_environment() -> Optional[EnvironmentType]:
+    """Get the environment the code is running in.
+
+    An environment is a higher-level hosted environment or notebook platform.
+    This is about where the code is running (Kaggle, Colab, AWS, GCP, ...).
+
+    Returns:
+        The environment the code is running in.
+    """
+    for env_type, hints in ENV_TYPE_HINTS.items():
+        if any(k in os.environ for k in hints):
+            return env_type
+
+    return None
 
 
 def _is_ipy() -> bool:
