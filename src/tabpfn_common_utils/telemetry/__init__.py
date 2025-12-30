@@ -7,6 +7,8 @@ from .core.decorators import (
     set_extension,
     get_current_extension,
     set_model_config,
+    set_init_params,
+    get_init_params,
 )
 
 # Public exports
@@ -21,4 +23,6 @@ __all__ = [
     "set_extension",
     "get_current_extension",
     "set_model_config",
+    "set_init_params",
+    "get_init_params",
 ]

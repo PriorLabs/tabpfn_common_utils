@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from functools import wraps
-from typing import Any, Callable, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Literal, Optional, Tuple, Union
 
 from .events import FitEvent, PredictEvent
 from .service import capture_event
@@ -81,6 +81,38 @@ def get_model_config() -> Optional[Tuple[str, str]]:
     try:
         data = json.loads(token)
         return data["model_path"], data["model_version"]
+    except Exception:
+        return None
+
+
+def set_init_params(
+    params: Dict[str, Any],
+) -> Optional[contextvars.Token[Optional[str]]]:
+    """Set the initial parameters of the model.
+
+    Args:
+        params: The initial parameters of the model.
+    """
+    try:
+        token = json.dumps(params)
+        tok = _get_context_var("tabpfn_model_init_params").set(token)
+        return tok
+    except Exception:
+        return None
+
+
+def get_init_params() -> Optional[Dict[str, Any]]:
+    """Get the initial parameters of the model.
+
+    Returns:
+        The initial parameters of the model.
+    """
+    token = _get_context_var("tabpfn_model_init_params").get()
+    if token is None:
+        return None
+
+    try:
+        return json.loads(token)
     except Exception:
         return None
 
@@ -382,6 +414,10 @@ def _send_model_called_event(call_info: _ModelCallInfo, duration_ms: int) -> Non
             # Set the model path and version
             event.model_path = model_path
             event.model_version = model_version
+
+        # Set the model init params for fit
+        if isinstance(event, FitEvent):
+            event.init_params = get_init_params()
 
     except TypeError as e:
         logger.debug(f"Event creation failed: {e}")
