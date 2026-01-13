@@ -336,9 +336,10 @@ class TestPingEvent:
         # Should contain base properties
         assert "python_version" in props
         assert "tabpfn_version" in props
+        assert "runtime_environment" in props
 
         # Should be minimal - only base properties
-        assert len(props) == 7
+        assert len(props) == 8
 
     def test_ping_event_minimal_structure(self):
         """Test that PingEvent has minimal structure (no additional fields)"""
@@ -354,6 +355,7 @@ class TestPingEvent:
             "extension",
             "frequency",
             "runtime_kernel",
+            "runtime_environment",
             "platform_os",
         }
         for property in event.properties:

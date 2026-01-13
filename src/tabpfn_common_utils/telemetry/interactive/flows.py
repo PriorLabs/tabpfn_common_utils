@@ -93,6 +93,11 @@ def _trigger_prompts(delta_days: int, max_prompts: int) -> bool:
 
     # Avoid prompt in first 24 hours
     delta_hours = config.get("prompt_delta_hours", 24)
+
+    # Ensure timezone-aware datetime
+    if install_date.tzinfo is None:
+        install_date = install_date.replace(tzinfo=timezone.utc)
+
     if utc_now - install_date <= timedelta(hours=delta_hours):
         return False
 

@@ -184,6 +184,17 @@ def _get_runtime_kernel() -> Optional[str]:
 
 
 @lru_cache(maxsize=1)
+def _get_runtime_environment() -> Optional[str]:
+    """Get the runtime environment of the platform.
+
+    Returns:
+        str: Runtime environment of the platform.
+    """
+    exec_context = get_execution_context()
+    return exec_context.environment
+
+
+@lru_cache(maxsize=1)
 def _get_install_id() -> str:
     """Get or create the install ID. If not set in disk-cached
     state, generate a new one and store it in the state.
@@ -248,6 +259,11 @@ class BaseTelemetryEvent:
     # Runtime environment of the platform
     runtime_kernel: Optional[str] = field(
         default_factory=_get_runtime_kernel, init=False
+    )
+
+    # Runtime environment of the platform
+    runtime_environment: Optional[str] = field(
+        default_factory=_get_runtime_environment, init=False
     )
 
     # Operating system of the platform
