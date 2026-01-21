@@ -310,17 +310,22 @@ class ModelLoadEvent(BaseTelemetryEvent):
     Event emitted when a model is loaded.
     """
 
+    # Status of the model download attempt
+    status: Literal["success", "failed"]
+
     # Install ID of the user
     install_id: str = field(default_factory=_get_install_id, init=False)
 
     # Name of the model, may be a HuggingFace repo ID
     model_name: Optional[str] = field(default=None)
 
-    # Status of the model download attempt
-    status: Literal["success", "failed"] = "success"
-
     # Failure reason if the model download failed
     failure_reason: Optional[str] = field(default=None)
+
+    def __post_init__(self):
+        """Post-init hook to ensure data integrity."""
+        if self.status == "success":
+            self.failure_reason = None
 
     @property
     def name(self) -> str:
