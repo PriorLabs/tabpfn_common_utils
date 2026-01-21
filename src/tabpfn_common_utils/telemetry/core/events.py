@@ -305,6 +305,29 @@ class SessionEvent(BaseTelemetryEvent):
 
 
 @dataclass
+class ModelLoadEvent(BaseTelemetryEvent):
+    """
+    Event emitted when a model is loaded.
+    """
+
+    # Install ID of the user
+    install_id: str = field(default_factory=_get_install_id, init=False)
+
+    # Name of the model, may be a HuggingFace repo ID
+    model_name: Optional[str] = field(default=None)
+
+    # Status of the model download attempt
+    status: Literal["success", "failed"] = "success"
+
+    # Failure reason if the model download failed
+    failure_reason: Optional[str] = field(default=None)
+
+    @property
+    def name(self) -> str:
+        return "model_load"
+
+
+@dataclass
 class PingEvent(BaseTelemetryEvent):
     """
     Event emitted when a ping is sent.
