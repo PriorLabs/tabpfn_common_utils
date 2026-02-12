@@ -1,6 +1,8 @@
 import logging
 import os
-
+import atexit
+import threading
+from queue import Queue, Empty
 from datetime import datetime
 from posthog import Posthog
 from .config import download_config
@@ -15,77 +17,93 @@ logger = logging.getLogger(__name__)
 
 # Suppress PostHog and analytics-python logs (unless explicitly enabled)
 if os.getenv("TABPFN_ENABLE_TELEMETRY_LOGS", "0").lower() not in ("1", "true"):
-    # Supress warnings
     for logger_name in ["posthog", "analytics", "posthog.analytics"]:
         logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
 
 @singleton
 class ProductTelemetry:
-    """
-    Service for capturing anonymous and aggregated telemetry data.
-    """
+    """Service for capturing anonymous and aggregated telemetry data."""
 
     # Public PostHog project API key
     PROJECT_API_KEY = "phc_wemJSoR4e8rGJomHz0clm6aHdOWp0EvpRP368uVsUvJ"
 
-    # Public PostHog host (EU)
+    # Public PostHog host
     HOST = "https://eu.i.posthog.com"
-
-    # PostHog client instance
-    _posthog_client: Optional[Posthog] = None
 
     def __init__(
         self,
         max_queue_size: int = 10,
-        flush_at: int = 10,
+        flush_at: int = 5,
         api_key: Optional[str] = None,
     ) -> None:
-        """
-        Initialize the Telemetry service.
-        """
-        # If telemetry is disabled, don't initialize the PostHog client
-        if not self.telemetry_enabled():
-            self._posthog_client = None
-            return
+        """Initialize the Telemetry service.
 
-        if api_key is None:
-            api_key = self.PROJECT_API_KEY
+        Args:
+            max_queue_size: The maximum number of events to queue before flushing.
+            flush_at: The number of events to flush after.
+            api_key: The API key to use for the PostHog client.
+        """
+        self._posthog_client: Optional[Posthog] = None
+        self._task_queue = Queue()
+        self._shutdown_event = threading.Event()
 
-        # Initialize the PostHog client
-        self._posthog_client = Posthog(
-            project_api_key=api_key,
-            host=self.HOST,
-            disable_geoip=True,
-            enable_exception_autocapture=False,
-            max_queue_size=max_queue_size,
-            flush_at=flush_at,
+        # Start worker thread
+        self._worker = threading.Thread(
+            target=self._worker_loop, daemon=True, name="TelemetryWorker"
         )
+        self._worker.start()
 
-    @classmethod
-    def telemetry_enabled(cls) -> bool:
+        # Register shutdown handler
+        # These are useful for shutting down the PostHog client and
+        # flushing the queued events - non-blocking.
+        atexit.register(self._shutdown)
+
+        # Queue initialization task
+        self._enqueue(self.__init, max_queue_size, flush_at, api_key)
+
+    def __init(self, max_queue_size: int, flush_at: int, api_key: Optional[str]):
+        """Initialize PostHog client based on whether telemetry is enabled
+        or not. Telemetry may be explicitly disabled by the user, but also
+        remotely by the server, based on the state of the telemetry config.
+
+        Args:
+            max_queue_size: The maximum number of events to queue before flushing.
+            flush_at: The number of events to flush after.
+            api_key: The API key to use for the PostHog client.
         """
-        Check if telemetry is enabled.
+        try:
+            # Quick env check first (non-blocking)
+            exec_context = get_execution_context()
+            default_disable = "1" if exec_context.ci else "0"
+            if os.getenv("TABPFN_DISABLE_TELEMETRY", default_disable).lower() in (
+                "1",
+                "true",
+            ):
+                logger.debug("Telemetry disabled by environment variable")
+                return
 
-        Returns:
-            bool: True if telemetry is enabled, False otherwise.
-        """
-        # Disable telemetry by default in CI environments, but allow override
-        exec_context = get_execution_context()
-        default_disable = "1" if exec_context.ci else "0"
+            # Check server config (blocking, but in worker thread)
+            try:
+                config = download_config()
+                if not config.get("enabled", True):
+                    logger.debug("Telemetry disabled by server config")
+                    return
+            except Exception as e:
+                logger.debug(f"Failed to load config, disabling telemetry: {e}")
+                return
 
-        disable_telemetry = os.getenv(
-            "TABPFN_DISABLE_TELEMETRY", default_disable
-        ).lower()
-        if disable_telemetry in ("1", "true"):
-            return False
-
-        # Overwrite any settings based on server-side configuration
-        config = download_config()
-        if config["enabled"] is False:
-            return False
-
-        return True
+            # Initialize PostHog
+            self._posthog_client = Posthog(
+                project_api_key=api_key or self.PROJECT_API_KEY,
+                host=self.HOST,
+                disable_geoip=True,
+                enable_exception_autocapture=False,
+                max_queue_size=max_queue_size,
+                flush_at=flush_at,
+            )
+        except Exception as e:
+            logger.debug(f"Failed to initialize telemetry: {e}")
 
     def capture(
         self,
@@ -95,65 +113,113 @@ class ProductTelemetry:
         properties: Optional[Dict[str, Any]] = None,
         timestamp: Optional[datetime] = None,
     ) -> None:
-        """
-        Send an event. Optionally override distinct_id (useful in API).
+        """Capture an event. This is a non-blocking operation.
 
         Args:
-            event (BaseTelemetryEvent): The event to send.
-            distinct_id (str): The distinct ID to send the event to.
-            properties (dict): The additional properties attached to an event.
-            timestamp (datetime): The timestamp of the event.
+            event: The telemetry event to capture.
+            distinct_id: The distinct ID to use for the event.
+            properties: The properties to use for the event.
+            timestamp: The timestamp to use for the event.
         """
-        if self.telemetry_enabled() is False:
+        self._enqueue(self._do_capture, event, distinct_id, properties, timestamp)
+
+    def _do_capture(
+        self,
+        event: BaseTelemetryEvent,
+        distinct_id: Optional[str],
+        properties: Optional[Dict[str, Any]],
+        timestamp: Optional[datetime],
+    ):
+        if not self._posthog_client:
             return
-
-        # Add the check just for type safety
-        if self._posthog_client is None:
-            return
-
-        # Merge the event properties with the provided properties
-        properties = {**event.properties, **(properties or {})}
-
-        # Set up dynamic `capture` arguments
-        capture_args = {
-            "event": event.name,
-            "properties": properties,
-            "timestamp": timestamp or event.timestamp,
-        }
-
-        # Do not capture any user ID if it is not provided
-        if distinct_id:
-            capture_args["distinct_id"] = distinct_id
 
         try:
+            merged_props = {**event.properties, **(properties or {})}
+
+            capture_args = {
+                "event": event.name,
+                "properties": merged_props,
+                "timestamp": timestamp or event.timestamp,
+            }
+
+            if distinct_id:
+                capture_args["distinct_id"] = distinct_id
+
             self._posthog_client.capture(**capture_args)
-        except Exception:
-            # Silently ignore any errors
-            pass
+            logger.debug(f"Captured event: {event.name}")
+        except Exception as e:
+            logger.debug(f"Failed to capture event: {e}")
 
     def flush(self) -> None:
-        """
-        Flush the PostHog client telemetry queue.
-        """
-        if self.telemetry_enabled() is False:
-            return
+        """Flush events. This is a non-blocking operation."""
+        self._enqueue(self._do_flush)
 
-        try:
-            self._posthog_client.flush()  # type: ignore
-        except Exception:
-            # Silently ignore any errors
-            pass
+    def _do_flush(self):
+        """Actually flush (runs in worker thread)."""
+        if self._posthog_client:
+            try:
+                self._posthog_client.flush()
+                logger.debug("Flushed telemetry queue")
+            except Exception as e:
+                logger.debug(f"Failed to flush: {e}")
+
+    def _enqueue(self, func, *args, **kwargs):
+        """Add a task to the queue.
+
+        Args:
+            func: The function to execute.
+            args: The arguments to pass to the function.
+            kwargs: The keyword arguments to pass to the function.
+        """
+        self._task_queue.put((func, args, kwargs))
+
+    def _worker_loop(self):
+        """Process tasks from the queue."""
+        while not self._shutdown_event.is_set():
+            try:
+                task = self._task_queue.get(timeout=0.5)
+                if task is None:  # Shutdown signal
+                    break
+
+                func, args, kwargs = task
+                func(*args, **kwargs)
+
+            except Empty:
+                continue
+            except Exception as e:
+                logger.debug(f"Telemetry task error: {e}")
+
+    def _shutdown(self):
+        """Shutdown handler.
+
+        We register a shutdown handler to ensure gracefully shutting down
+        the PostHog client and flushing the queued events.
+        """
+        # Signal shutdown
+        self._shutdown_event.set()
+        self._task_queue.put(None)
+
+        # Wait for worker to finish
+        if self._worker.is_alive():
+            self._worker.join(timeout=5.0)
+
+        # Final flush and shutdown
+        if self._posthog_client:
+            try:
+                self._posthog_client.shutdown()
+            except Exception as e:
+                logger.debug(f"Shutdown error: {e}")
 
 
 def capture_event(
-    event: BaseTelemetryEvent, max_queue_size: int = 10, flush_at: int = 10
+    event: BaseTelemetryEvent, *, max_queue_size: int = 10, flush_at: int = 10
 ) -> None:
     """Capture a telemetry event.
 
     Args:
-        event: The event to capture.
-        max_queue_size: The maximum size of the queue.
-        flush_at: The number of events to flush.
+        event: The telemetry event to capture.
+        max_queue_size: The maximum number of events to queue before flushing.
+        flush_at: The number of events to flush after.
     """
     client = ProductTelemetry(max_queue_size, flush_at)
     client.capture(event)
