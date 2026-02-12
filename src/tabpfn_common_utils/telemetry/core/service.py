@@ -133,6 +133,12 @@ class ProductTelemetry:
             return
 
         try:
+            # Enrich the event with additional properties
+            # These are properties that are not set at initialization time,
+            # because they may be expensive to compute.
+            event.enrich()
+
+            # Merge the event properties with the additional properties
             merged_props = {**event.properties, **(properties or {})}
 
             capture_args = {
