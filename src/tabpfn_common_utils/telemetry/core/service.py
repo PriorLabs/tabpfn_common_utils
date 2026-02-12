@@ -2,7 +2,7 @@ import logging
 import os
 import atexit
 import threading
-from queue import Queue, Empty
+from queue import Queue
 from datetime import datetime
 from posthog import Posthog
 from .config import download_config
