@@ -2,6 +2,7 @@ import logging
 import os
 import atexit
 import threading
+import queue
 from queue import Queue
 from datetime import datetime
 from posthog import Posthog
@@ -176,7 +177,10 @@ class ProductTelemetry:
             args: The arguments to pass to the function.
             kwargs: The keyword arguments to pass to the function.
         """
-        self._task_queue.put((func, args, kwargs))
+        try:
+            self._task_queue.put((func, args, kwargs), block=False)
+        except queue.Full:
+            return
 
     def _worker_loop(self):
         """Process tasks from the queue."""
