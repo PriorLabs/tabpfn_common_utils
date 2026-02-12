@@ -45,7 +45,7 @@ class ProductTelemetry:
             api_key: The API key to use for the PostHog client.
         """
         self._posthog_client: Optional[Posthog] = None
-        self._task_queue = Queue()
+        self._task_queue = Queue(maxsize=1_000)
         self._shutdown_event = threading.Event()
 
         # Start worker thread
