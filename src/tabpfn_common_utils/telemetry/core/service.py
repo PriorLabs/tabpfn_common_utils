@@ -46,7 +46,6 @@ class ProductTelemetry:
         """
         self._posthog_client: Optional[Posthog] = None
         self._task_queue = Queue(maxsize=1_000)
-        self._shutdown_event = threading.Event()
 
         # Start worker thread
         self._worker = threading.Thread(
@@ -175,19 +174,22 @@ class ProductTelemetry:
 
     def _worker_loop(self):
         """Process tasks from the queue."""
-        while not self._shutdown_event.is_set():
+        while True:
+            task = self._task_queue.get(block=True)
+            if task is None:  # Shutdown signal
+                break
             try:
-                task = self._task_queue.get(timeout=0.5)
-                if task is None:  # Shutdown signal
-                    break
-
                 func, args, kwargs = task
                 func(*args, **kwargs)
-
-            except Empty:
-                continue
             except Exception as e:
                 logger.debug(f"Telemetry task error: {e}")
+
+        # Final flush and shutdown in worker
+        if self._posthog_client:
+            try:
+                self._posthog_client.shutdown()
+            except Exception as e:
+                logger.debug(f"Shutdown error: {e}")
 
     def _shutdown(self):
         """Shutdown handler.
@@ -195,20 +197,11 @@ class ProductTelemetry:
         We register a shutdown handler to ensure gracefully shutting down
         the PostHog client and flushing the queued events.
         """
-        # Signal shutdown
-        self._shutdown_event.set()
         self._task_queue.put(None)
 
         # Wait for worker to finish
         if self._worker.is_alive():
             self._worker.join(timeout=5.0)
-
-        # Final flush and shutdown
-        if self._posthog_client:
-            try:
-                self._posthog_client.shutdown()
-            except Exception as e:
-                logger.debug(f"Shutdown error: {e}")
 
 
 def capture_event(
