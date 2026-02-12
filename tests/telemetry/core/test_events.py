@@ -76,6 +76,7 @@ class TestBaseTelemetryEvent:
                 return "test_event"
 
         event = TestEvent()
+        event.enrich()
 
         # Check that all fields are initialized
         assert isinstance(event.python_version, str)
@@ -161,6 +162,7 @@ class TestDatasetEvent:
     def test_dataset_event_inherits_base_properties(self):
         """Test that DatasetEvent inherits base telemetry properties"""
         event = DatasetEvent(task="classification", role="train")
+        event.enrich()
 
         # Check inherited properties
         assert isinstance(event.python_version, str)
@@ -233,6 +235,7 @@ class TestFitEvent:
     def test_fit_event_inherits_base_properties(self):
         """Test that FitEvent inherits base telemetry properties"""
         event = FitEvent(task="classification")
+        event.enrich()
 
         assert isinstance(event.python_version, str)
         assert isinstance(event.tabpfn_version, str)
@@ -283,7 +286,8 @@ class TestPredictEvent:
     def test_predict_event_inherits_base_properties(self):
         """Test that PredictEvent inherits base telemetry properties"""
         event = PredictEvent(task="classification")
-
+        event.enrich()
+        
         assert isinstance(event.python_version, str)
         assert isinstance(event.tabpfn_version, str)
         assert isinstance(event.timestamp, datetime)
@@ -318,6 +322,7 @@ class TestPingEvent:
     def test_ping_event_inherits_base_properties(self):
         """Test that PingEvent inherits base telemetry properties"""
         event = PingEvent()
+        event.enrich()
 
         assert isinstance(event.python_version, str)
         assert isinstance(event.tabpfn_version, str)
@@ -369,6 +374,7 @@ class TestModelLoadEvent:
     def test_model_load_event_initialization(self):
         """Test ModelLoadEvent initialization with required status"""
         event = ModelLoadEvent(status="success")
+        event.enrich()
 
         assert event.status == "success"
         assert event.name == "model_load"
@@ -380,6 +386,7 @@ class TestModelLoadEvent:
         event = ModelLoadEvent(
             status="failed", failure_reason="Network error", model_name="test-model"
         )
+        event.enrich()
 
         assert event.status == "failed"
         assert event.failure_reason == "Network error"
@@ -389,6 +396,7 @@ class TestModelLoadEvent:
         """Test that __post_init__ clears failure_reason when status is success"""
         # This tests the __post_init__ behavior
         event = ModelLoadEvent(status="success", failure_reason="should be cleared")
+        event.enrich()
 
         assert event.status == "success"
         assert event.failure_reason is None
@@ -396,6 +404,7 @@ class TestModelLoadEvent:
     def test_model_load_event_inherits_base_properties(self):
         """Test that ModelLoadEvent inherits base telemetry properties"""
         event = ModelLoadEvent(status="success")
+        event.enrich()
 
         assert isinstance(event.python_version, str)
         assert isinstance(event.tabpfn_version, str)
@@ -410,6 +419,7 @@ class TestModelLoadEvent:
             model_name="test-model",
             failure_reason="Download timeout",
         )
+        event.enrich()
 
         props = event.properties
 
@@ -435,6 +445,11 @@ class TestEventIntegration:
         ]
 
         for event in events:
+            # Enrich the event with additional properties
+            # These are properties that are not set at initialization time,
+            # because they may be expensive to compute.
+            event.enrich()
+
             # All should have base properties
             assert hasattr(event, "python_version")
             assert hasattr(event, "tabpfn_version")
