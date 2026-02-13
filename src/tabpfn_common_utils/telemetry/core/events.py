@@ -142,15 +142,15 @@ def _get_gpu_type() -> Optional[str]:
             nvmlDeviceGetName(nvmlDeviceGetHandleByIndex(i)) for i in range(counts)
         ]
 
-        # Shutdown the NVML library
-        nvmlShutdown()
-
         # Because NVML runs very fast, we just return the device name
         # without caching it. We return the first device name and assume
         # that the VM has the same GPU type for all devices.
         return devices[0]
     except Exception:
         pass
+    finally:
+        # Shutdown the NVML library
+        nvmlShutdown()
 
     # Only then, as an alternative, we try to use PyTorch to get the GPU name
     # This is the slowest method as it requires importing the PyTorch library
