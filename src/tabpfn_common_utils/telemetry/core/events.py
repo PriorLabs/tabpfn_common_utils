@@ -130,8 +130,14 @@ def _get_gpu_type() -> Optional[str]:
     """
     # First, we try to use the NVML library to get the GPU names
     # This is the preferred method as it is faster than using PyTorch
+    nvml_initialized = False
+
     try:
         nvmlInit()
+
+        # Set a flag to indicate that the NVML library was initialized
+        # if running on CPU, this part of the code will not be reached
+        nvml_initialized = True
 
         counts = nvmlDeviceGetCount()
         if counts == 0:
@@ -150,7 +156,8 @@ def _get_gpu_type() -> Optional[str]:
         pass
     finally:
         # Shutdown the NVML library
-        nvmlShutdown()
+        if nvml_initialized:
+            nvmlShutdown()
 
     # Only then, as an alternative, we try to use PyTorch to get the GPU name
     # This is the slowest method as it requires importing the PyTorch library
