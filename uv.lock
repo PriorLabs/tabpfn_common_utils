@@ -727,6 +727,15 @@ wheels = [
 ]
 
 [[package]]
+name = "nvidia-ml-py"
+version = "13.590.48"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/a0/f4fc18cf72f06821a9a665085435b901449986855519d5b3843532db35e9/nvidia_ml_py-13.590.48.tar.gz", hash = "sha256:8184d1be52914ac7f0991cd1c0d946c65dc88a840c754cd12c274b77b88760dd", size = 49732, upload-time = "2026-01-22T01:14:56.456Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/72/fb2af0d259a651affdce65fd6a495f0e07a685a0136baf585c5065204ee7/nvidia_ml_py-13.590.48-py3-none-any.whl", hash = "sha256:fd43d30ee9cd0b7940f5f9f9220b68d42722975e3992b6c21d14144c48760e43", size = 50680, upload-time = "2026-01-22T01:14:55.281Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1222,6 +1231,7 @@ dependencies = [
     { name = "filelock" },
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "numpy", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "nvidia-ml-py" },
     { name = "pandas" },
     { name = "platformdirs" },
     { name = "posthog" },
@@ -1261,6 +1271,7 @@ requires-dist = [
     { name = "filelock", specifier = ">=3.19.1" },
     { name = "hatchling", marker = "extra == 'build'", specifier = ">=1.25" },
     { name = "numpy", specifier = ">=1.21.6" },
+    { name = "nvidia-ml-py", specifier = ">=13.590.48" },
     { name = "pandas", specifier = ">=1.4.0,<3" },
     { name = "platformdirs", specifier = ">=4" },
     { name = "posthog", specifier = "~=6.7" },
