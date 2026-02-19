@@ -6,6 +6,8 @@ readme = "README.md"
 authors = [
     {name = "Prior Labs", email = "hello@priorlabs.ai"}
 ]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 maintainers = [
     {name = "Prior Labs", email = "hello@priorlabs.ai"}
 ]
