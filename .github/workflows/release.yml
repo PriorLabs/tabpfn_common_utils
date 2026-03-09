@@ -52,10 +52,18 @@ jobs:
           git describe --exact-match HEAD || (echo "::error::HEAD is not exactly on tag ${{ github.ref_name }}"; exit 1)
           echo "Building version from tag: ${{ github.ref_name }}"
 
+      # Force version from tag; hatch-vcs/setuptools-scm can yield next_version.dev0 when
+      # they don't detect exact tag (e.g. in isolated build env), so we pin the version.
+      - name: Set version from tag for build
+        id: set_version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
       - name: Clean previous builds
         run: git clean -xfd dist build *.egg-info || true
 
       - name: Build package
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION_FOR_TABPFN_COMMON_UTILS: ${{ steps.set_version.outputs.version }}
         run: uv run python -m build
 
       - name: Upload build artifacts
