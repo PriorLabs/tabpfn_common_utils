@@ -60,7 +60,7 @@ jobs:
           echo "Building version from tag: ${{ github.ref_name }}"
 
       - name: Clean previous builds
-        run: git clean -xfd
+        run: git clean -fd
 
       - name: Build package
         env:
