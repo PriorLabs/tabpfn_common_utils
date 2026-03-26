@@ -373,10 +373,9 @@ class TestExtensionEntryEventEmission:
         assert mock_capture.call_count == 1
         assert mock_capture.call_args[0][0].extension_name == "cls_ext"
 
-    @patch("tabpfn_common_utils.telemetry.core.decorators.capture_event")
-    def test_event_not_emitted_on_exception(self, mock_capture):
-        """capture_event failure doesn't prevent the wrapped function from running."""
-        mock_capture.side_effect = RuntimeError("PostHog down")
+    @patch("posthog.Posthog.capture", side_effect=RuntimeError("PostHog down"))
+    def test_capture_event_resilient_to_posthog_failure(self, _mock_posthog):
+        """PostHog client failure doesn't prevent the wrapped function from running."""
 
         @set_extension("fail_ext")
         def my_func():
