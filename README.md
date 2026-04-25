@@ -1,25 +1,24 @@
 # TabPFN Common Utilities
 
-A comprehensive utility package for [TabPFN](https://github.com/priorlabs/tabpfn) - the foundation model for tabular data.
+Shared Python utilities used across the [TabPFN](https://github.com/priorlabs/tabpfn) ecosystem (the tabular foundation model).
 
 ## Features
 
-### 🔒 Privacy-First Telemetry System
-- **Anonymous & Aggregated Data Collection**: Implements safe, GDPR-compliant telemetry that respects user privacy
-- **Configurable Analytics**: Optional telemetry that can be disabled via environment variables
-- **Usage Pattern Insights**: Tracks TabPFN usage patterns to improve the model and user experience
-- **Zero Personal Data**: No personal information or sensitive data is collected or transmitted
-
-### 💰 Cost Estimation
-- **Resource Planning**: Accurate estimation of computational costs and duration for TabPFN predictions
-- **Cloud Pricing**: Essential for resource planning in cloud-based TabPFN services
-- **Task-Specific Calculations**: Different cost models for classification vs regression tasks
-
-### 📊 Data Processing Utilities
-- **Regression Results**: Comprehensive handling of prediction outputs with mean, median, mode, and quantiles
+### Data Processing Utilities
+- **Regression Results**: Handling of prediction outputs with mean, median, mode, and quantiles
 - **Data Serialization**: Convert between pandas DataFrames, NumPy arrays, and CSV formats
 - **Dataset Management**: Load and preprocess standard ML datasets with proper train/test splits
-- **Preprocessing Configuration**: Extensive options for data transformation strategies
+- **Preprocessing Configuration**: Options for data transformation strategies
+
+### Cost Estimation
+- **Resource Planning**: Estimation of computational costs and duration for TabPFN predictions
+- **Cloud Pricing**: Useful for resource planning in cloud-based TabPFN services
+- **Task-Specific Calculations**: Different cost models for classification vs regression tasks
+
+### Telemetry (optional, opt-out)
+- **Anonymous & Aggregated**: No personal information or sensitive data is collected or transmitted
+- **Configurable**: Can be disabled via environment variable
+- **Usage Patterns**: Aggregate signals used to improve TabPFN
 
 ## Installation
 
@@ -33,21 +32,6 @@ uv add tabpfn-common-utils
 ```
 
 ## Quick Start
-
-### Telemetry (Privacy-Compliant)
-
-```python
-from tabpfn_common_utils.telemetry import ProductTelemetry
-
-# Initialize telemetry service (anonymous, GDPR-compliant)
-telemetry = ProductTelemetry()
-
-# Track usage events (no personal data collected)
-telemetry.capture(...)
-
-# Telemetry can be disabled by setting environment variable
-export TABPFN_DISABLE_TELEMETRY=1
-```
 
 ### Regression Results
 
@@ -80,17 +64,26 @@ X_train, X_test, y_train, y_test = get_example_dataset("iris")
 csv_bytes = serialize_to_csv_formatted_bytes(X_train)
 ```
 
-## Privacy & Compliance
+### Telemetry
 
-This package implements **privacy-first telemetry** that:
+```python
+from tabpfn_common_utils.telemetry import ProductTelemetry
 
-- ✅ **GDPR Compliant**: No personal data collection
-- ✅ **Anonymous Only**: No user identification or tracking
-- ✅ **Aggregated Data**: Only statistical insights are collected
-- ✅ **User Control**: Can be completely disabled
-- ✅ **Transparent**: Open source code for full transparency
+# Initialize telemetry service (anonymous; opt-out)
+telemetry = ProductTelemetry()
 
-Telemetry data helps improve TabPFN but never compromises user privacy.
+# Track usage events
+telemetry.capture(...)
+
+# Disable via environment variable
+export TABPFN_DISABLE_TELEMETRY=1
+```
+
+## Telemetry notes
+
+- Anonymous and aggregated only — no user identification or tracking
+- Disabled by setting `TABPFN_DISABLE_TELEMETRY=1`
+- Open source — see `src/tabpfn_common_utils/telemetry/` for what is sent
 
 ## Development
 
@@ -123,7 +116,7 @@ uv add <package_name>
 uv add --group dev <package_name>
 ```
 
-## 📝 License
+## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
