@@ -18,9 +18,9 @@ def _clear_ttl_cache():
     functools.wraps preserves the underlying cached callable as __wrapped__, so we
     can clear it directly to ensure each test sees a fresh fetch.
     """
-    config_module.download_config.__wrapped__.cache_clear()
+    config_module.download_config.__wrapped__.cache_clear()  # type: ignore[attr-defined]
     yield
-    config_module.download_config.__wrapped__.cache_clear()
+    config_module.download_config.__wrapped__.cache_clear()  # type: ignore[attr-defined]
 
 
 def _mock_response(status_code: int, json_payload=None, raise_on_json: bool = False):
