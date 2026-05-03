@@ -54,7 +54,18 @@ def download_config() -> Dict[str, Any]:
         return default
 
     try:
-        return resp.json()
+        config = resp.json()
     except ValueError:
         logger.debug(f"Failed to parse telemetry config JSON from: {url}")
         return default
+
+    # Validate the shape: anything other than a dict containing "enabled" would
+    # cause a TypeError/KeyError in downstream `config["enabled"]` access. Fail
+    # closed so a malformed remote response cannot crash the host process.
+    if not isinstance(config, dict) or "enabled" not in config:
+        logger.debug(
+            f"Telemetry config from {url} is malformed or missing 'enabled' key"
+        )
+        return default
+
+    return config

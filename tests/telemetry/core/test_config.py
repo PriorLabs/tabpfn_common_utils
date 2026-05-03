@@ -64,6 +64,25 @@ def test_download_config_fails_closed_on_invalid_json():
         assert config_module.download_config() == {"enabled": False}
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        [1, 2, 3],          # list
+        "enabled",          # string
+        42,                 # int
+        None,               # null
+        {"foo": "bar"},     # dict missing "enabled"
+        {},                 # empty dict
+    ],
+)
+def test_download_config_fails_closed_on_malformed_shape(payload):
+    """If the JSON parses but isn't a dict with an 'enabled' key, default to disabled."""
+    with patch.object(
+        config_module.requests, "get", return_value=_mock_response(200, payload)
+    ):
+        assert config_module.download_config() == {"enabled": False}
+
+
 def test_download_config_uses_env_override(monkeypatch):
     """Respects TABPFN_TELEMETRY_CONFIG_URL when set."""
     monkeypatch.setenv("TABPFN_TELEMETRY_CONFIG_URL", "https://example.test/cfg.json")
