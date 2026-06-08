@@ -28,7 +28,7 @@ class ProductTelemetry:
 
     # PostHog project ingestion token, read from the environment so no
     # credential ships in the package. When unset, telemetry is a no-op.
-    PROJECT_TOKEN: Optional[str] = os.getenv("TABPFN_POSTHOG_PROJECT_TOKEN")
+    PROJECT_API_KEY: Optional[str] = os.getenv("TABPFN_POSTHOG_PROJECT_TOKEN")
 
     # Public PostHog host (EU)
     HOST = "https://eu.i.posthog.com"
@@ -51,7 +51,7 @@ class ProductTelemetry:
             return
 
         if api_key is None:
-            api_key = self.PROJECT_TOKEN
+            api_key = self.PROJECT_API_KEY
 
         # No token → we cannot emit telemetry; remain a no-op.
         if not api_key:
