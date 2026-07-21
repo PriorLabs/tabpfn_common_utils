@@ -22,9 +22,6 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "numpy>=1.21.6",
-    "pandas>=1.4.0",
-    "scikit-learn>=1.2.0",
     "typing-extensions>=4.12",
     "posthog>=6.7",
     "platformdirs>=4",
@@ -35,6 +32,15 @@ dependencies = [
 
 [project.optional-dependencies]
 telemetry-interactive = []
+# Needed only by the dataset/array helpers (utils.py dataset functions,
+# regression_pred_result, expense_estimation), which import these lazily or
+# are not part of the telemetry path. Slim consumers (API services) can
+# install the package without the data stack.
+datasets = [
+    "numpy>=1.21.6",
+    "pandas>=1.4.0",
+    "scikit-learn>=1.2.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/priorlabs/tabpfn_common_utils"
@@ -77,4 +83,7 @@ dev = [
   "pytest>=8.3.5",
   "pytest-cov>=5",
   "ruff>=0.11.6",
+  # The test suite covers the dataset/array helpers, which need the
+  # `datasets` extra's stack.
+  "tabpfn-common-utils[datasets]",
 ]
