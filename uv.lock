@@ -2101,26 +2101,22 @@ source = { editable = "." }
 dependencies = [
     { name = "filelock", version = "3.19.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "filelock", version = "3.25.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "nvidia-ml-py" },
+    { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "pandas", version = "3.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "platformdirs", version = "4.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "platformdirs", version = "4.9.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "posthog", version = "6.9.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "posthog", version = "7.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "requests", version = "2.32.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "requests", version = "2.33.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "typing-extensions" },
-]
-
-[package.optional-dependencies]
-datasets = [
-    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "pandas", version = "3.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "scikit-learn", version = "1.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
@@ -2137,22 +2133,21 @@ dev = [
     { name = "pytest", version = "9.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pytest-cov" },
     { name = "ruff" },
-    { name = "tabpfn-common-utils", extra = ["datasets"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "filelock", specifier = ">=3.19.1" },
-    { name = "numpy", marker = "extra == 'datasets'", specifier = ">=1.21.6" },
+    { name = "numpy", specifier = ">=1.21.6" },
     { name = "nvidia-ml-py", specifier = ">=13.590.48" },
-    { name = "pandas", marker = "extra == 'datasets'", specifier = ">=1.4.0" },
+    { name = "pandas", specifier = ">=1.4.0" },
     { name = "platformdirs", specifier = ">=4" },
     { name = "posthog", specifier = ">=6.7" },
     { name = "requests", specifier = ">=2.32.5" },
-    { name = "scikit-learn", marker = "extra == 'datasets'", specifier = ">=1.2.0" },
+    { name = "scikit-learn", specifier = ">=1.2.0" },
     { name = "typing-extensions", specifier = ">=4.12" },
 ]
-provides-extras = ["datasets", "telemetry-interactive"]
+provides-extras = ["telemetry-interactive"]
 
 [package.metadata.requires-dev]
 build = [
@@ -2166,7 +2161,6 @@ dev = [
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-cov", specifier = ">=5" },
     { name = "ruff", specifier = ">=0.11.6" },
-    { name = "tabpfn-common-utils", extras = ["datasets"] },
 ]
 
 [[package]]
