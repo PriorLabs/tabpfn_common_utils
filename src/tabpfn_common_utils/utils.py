@@ -1,20 +1,31 @@
+# Deferred annotation evaluation so pandas/numpy names in signatures don't
+# require the modules at import time.
+from __future__ import annotations
+
 import time
 import typing
 
 from functools import lru_cache, wraps
 
-import pandas as pd
-import numpy as np
-from sklearn.datasets import load_breast_cancer, load_digits, load_iris, load_diabetes
-from sklearn.model_selection import train_test_split
-from typing import Literal, Union, Dict, Any
+from typing import Literal, Union, Dict, Any, TYPE_CHECKING
 from dataclasses import dataclass
 from typing_extensions import override
+
+# pandas, numpy and scikit-learn are imported lazily inside the functions that
+# need them: this module also hosts light helpers (singleton, ttl_cache,
+# shape_of) used by the telemetry package, and consumers of those (e.g. API
+# services) must be able to import it without the heavy data stack installed.
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
 
 
 def serialize_to_csv_formatted_bytes(
     data: typing.Union[pd.DataFrame, pd.Series, np.ndarray],
 ) -> bytes:
+    import numpy as np
+    import pandas as pd
+
     if type(data) not in [pd.DataFrame, pd.Series, np.ndarray]:
         raise TypeError(f"({type(data)}) is not supported for serialization")
 
@@ -141,6 +152,16 @@ def shape_of(X: Any) -> tuple[int, int]:
 def get_example_dataset(
     dataset_name: typing.Literal["iris", "breast_cancer", "digits", "diabetes"],
 ) -> typing.Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    import numpy as np
+    import pandas as pd  # the typing.cast below references pd at runtime
+    from sklearn.datasets import (
+        load_breast_cancer,
+        load_diabetes,
+        load_digits,
+        load_iris,
+    )
+    from sklearn.model_selection import train_test_split
+
     load_dataset_fn = {
         "iris": load_iris,
         "breast_cancer": load_breast_cancer,
@@ -170,6 +191,8 @@ def get_example_dataset(
 def get_dataset_with_specific_size(
     num_examples: int = 10_000, num_columns: int = 100
 ) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    import numpy as np
+
     x_train = np.random.RandomState(42).rand(num_examples, num_columns)
     y_train = np.random.RandomState(42).randint(0, 2, size=num_examples)
 
@@ -177,6 +200,8 @@ def get_dataset_with_specific_size(
 
 
 def assert_y_pred_proba_is_valid(x_test, y_pred_proba):
+    import numpy as np
+
     if isinstance(y_pred_proba, list):
         y_pred_proba = np.array(y_pred_proba)
 
