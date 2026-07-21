@@ -1,5 +1,3 @@
-# Deferred annotation evaluation so pandas/numpy names in signatures don't
-# require the modules at import time.
 from __future__ import annotations
 
 import time
