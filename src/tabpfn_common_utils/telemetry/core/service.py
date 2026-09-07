@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Suppress PostHog and analytics-python logs (unless explicitly enabled)
 if os.getenv("TABPFN_ENABLE_TELEMETRY_LOGS", "0").lower() not in ("1", "true"):
-    # Supress warnings
+    # Suppress warnings
     for logger_name in ["posthog", "analytics", "posthog.analytics"]:
         logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
