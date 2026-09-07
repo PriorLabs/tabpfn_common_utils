@@ -65,13 +65,13 @@ def _prompt_identity(
 
 def _should_prompt() -> bool:
     """
-    Check if the user should be prompted to subscribe to the newsletter.
+    Check if the user should be prompted to share anonymous usage analytics.
     """
     return False
 
 
 def _on_done(res: PromptResult) -> None:
-    """Done callback for newsletter prompt.
+    """Done callback for identity prompt.
 
     Args:
         res: The prompt result.
