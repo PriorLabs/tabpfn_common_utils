@@ -12,14 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Pinned to commit SHA (v3.6.1) since tags are mutable.
+      # Ruff is pinned to the uv.lock version that the release workflow's `uv run ruff`
+      # uses; otherwise pyproject's `ruff>=` floor resolves to the newest release.
       - uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
         with:
           src: "."
+          version: "0.15.10"
       # Mirror the release workflow's `ruff format --check`, which the default
       # ruff-action command (`check`) does not run.
       - uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
         with:
           src: "."
+          version: "0.15.10"
           args: "format --check"
 
   check_python_typing:
