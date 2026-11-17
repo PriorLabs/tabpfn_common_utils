@@ -28,7 +28,7 @@ jobs:
 
   check_python_typing:
     name: Python type checking
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
